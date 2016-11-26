@@ -12,6 +12,24 @@ if(!function_exists('x')){
 		printf('<pre>%s</pre>', print_r($ar, 1));
 	}
 }
+
+if(!function_exists('s')){
+	function s($s, $t=0){
+		switch($t){
+		case 0:
+		  $color='#485';break;
+		case 1:
+		  $color='#944';break;
+		}
+		?>
+		<div style="margin-bottom:5px;padding:4px;color:<?=$color;?>;font-weight:bold">
+		  <?=$s;?>
+		</div>
+	<?php 
+	flush();
+	ob_flush();
+	}
+}
 if(!function_exists('j')){
 	function j(){
 		
