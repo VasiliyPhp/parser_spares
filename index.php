@@ -8,7 +8,36 @@ touch('checker.dd');
 // remove('cats');
 $cats = get_main_categories();
 
+$needle = [
+	'Audi',
+	'Chery',
+	'Citroen',
+	'Geely',
+	'Hyundai',
+	'BMW',
+	'Chevrolet',
+	'Daewoo',
+	'Ford',
+	'Honda',
+	'Kia',
+	'Lifan',
+	'Mazda',
+	'Mitsubishi',
+	'Nissan',
+	'Opel',
+	'Peugeot',
+	'Renault',
+	'Skoda',
+	'Toyota',
+	'VW',
+	'Fiat',
+	'Infiniti',
+	'Volvo',
+];
 foreach($cats as $cat){
+	if(!in_array($cat['title'], $needle)){
+		continue;
+	}
 	parse($cat);
 }
 function get_main_categories(){
@@ -33,6 +62,7 @@ function parse($cat){
 	//название марки
 	$_marka = $cat['title'];
 	// поиск моделей
+	$submodelsDoc = null;
 	$models = file_get_contents(SITE . $cat['href']);
 	$models = phpQuery::newDocument($models);
 	$models = pq('.model-list a');
@@ -41,27 +71,29 @@ function parse($cat){
 		// $img   = pq($model)->find('img')->attr('src');
 		//название модели 
 		$_model = trim(pq($model)->find('.item-model-info')->text());
+		$_model = str_replace('/','-',$_model);
 		$href  = trim(pq($model)->attr('href'));
-		
+		if(csv_exists($_marka,$_model)){
+			s("Пропускаем $_marka $_model");
+			continue;
+		}
 		if(!$href){
 			continue;
 		}
-		phpQuery::unloadDocuments();
 		
 		// поиск подмоделей 
+		$submodelsDoc && $submodelsDoc->unloadDocument();
 		$submodelsDoc = file_get_contents(SITE . $href);
-		
 		$submodelsDoc = phpQuery::newDocument($submodelsDoc)->find('.model-list a');
 		$cars = [];
 		$i = 0;
 		foreach($submodelsDoc as $subm){
 			$subm_href = trim(pq($subm)->attr('href'));
-			$_submodel = trim(pq($subm)->text());
+			$_submodel = str_replace('/','-',trim(pq($subm)->text()));
 		  $img       = trim(pq($subm)->find('img')->attr('src'));
 	   	save_img($_marka, $_model, $_submodel, $img);
 			// поиск категорий для подмоделей
 			$sub_cats = get_cats(SITE . $subm_href);
-			phpQuery::unloadDocuments();
 			foreach($sub_cats as $sub_cat){
 				$_category = $sub_cat['title'];
 				$_href = $sub_cat['href'];
@@ -80,19 +112,18 @@ function find_subcats($ar){
 	extract($ar);
 	$doc = file_get_contents($_href);
 	$doc = phpQuery::newDocument($doc);
-	$doc = pq('.parts_left .ulplusminus a');
+	$list = pq('.parts_left .ulplusminus a');
 	$cats = [];
 	$i = 0;
-	foreach($doc as $cat){
+	foreach($list as $cat){
 		$cats[$i]['title'] = $_subcat = pq($cat)->text();
 		$cats[$i]['href'] = $_href2 = pq($cat)->attr('href');
 		$ar['_href'] = SITE . $_href2;
 		$ar['_subcat'] = $_subcat;
-		phpQuery::unloadDocuments();
 		find_spares($ar);
 		$i++;
-		
 	}
+	$doc->unloadDocument();
 	// j($cats);
 	// exit;
 }
@@ -102,6 +133,7 @@ function find_spares($ar, $page = 1){
 	if(!file_exists('checker.dd')){
 		s('Вызвана остановка',1); exit;
 	}
+	$found = 0;
 	extract($ar);
 	if($page>1){
 		$_href .= '?page=' . $page;
@@ -109,45 +141,50 @@ function find_spares($ar, $page = 1){
 	s(str_repeat('&nbsp;', ($page-1)*3). "$_marka, $_submodel, $_subcat, page $page");
 	$doc = @file_get_contents($_href);
 	if(!$doc){
-		continue;
+		return ;
 	}
-	phpQuery::unloadDocuments();
 	$doc = phpQuery::newDocument($doc);
-	if($pagi = pq('#pagination-block')){
-		$cur_page = (int)$pagi->attr('data-currentpage');
-		$end_page = (int)$pagi->attr('data-endpage');
-		if($cur_page < $end_page){
-			find_spares($ar, ++$cur_page);
-		}
-	}
 	$list = pq('.parts-list .parts-item_box');
 	foreach($list as $item){
 		if( !($label = pq('.label-new',$item)->text()) ){
-  		s('Пропускаем б/у запчасть',1);
+  		// s('Пропускаем б/у запчасть',1);
 			continue;
 		}
-		s('Сохнаняем новую запчасть '. $label . ' ' . $_href);
+		$found++;
+		// s('Сохнаняем новую запчасть '. $label . ' ' . $_href);
 		$ar['_title'] = pq('a[itemprop=name]',$item)->text();
 		$ar['_img']   = pq('.item-img img',$item)->attr('content');
 		$ar['_sku']   = trim(str_replace('Ориг. номер:','', pq('.item-line_info:eq(0)',$item)->text()));
 		save_spare($ar);
 	}
+	if($pagi = pq('#pagination-block')){
+		$cur_page = (int)$pagi->attr('data-currentpage');
+		$end_page = (int)$pagi->attr('data-endpage');
+		if($cur_page < $end_page){
+    	$doc->unloadDocument();
+			find_spares($ar, ++$cur_page);
+		}
+	}
+	$doc->unloadDocument();
+	s("Найдено $found запчастей");
 	
 	// exit;
 }
-
+function csv_exists($_marka,$_model){
+	return file_exists("csv/$_marka/$_model" . '.csv');
+}
 function save_spare($ar){
 	extract(array_map('trim',$ar));
 	$csv_path = "csv/$_marka/";
 	$img_path = 'spares_img/';
-	$img_name = substr( md5( mt_rand(1,1000) . time() . $_sku),0,9 ) . '.jpg';
+	$img_name = substr( md5($_sku),0,9 ) . '.jpg';
 	file_exists($img_path) || mkdir($img_path,null,1);
 	file_exists($csv_path) || mkdir($csv_path,null,1);
 	$img_bin = @file_get_contents($_img);
 	if($img_bin){
 		file_put_contents($img_path.$img_name,$img_bin);
 	}else{
-		s('нет картинки ' . $_img,1);
+		// s('нет картинки ' . $_img,1);
 		$img_name = 'no image';
 	}
 	if(!file_exists($csv_path.$_model.'.csv')){
@@ -186,13 +223,14 @@ function get_cats($href){
 		$subc[$i]['href'] = SITE . pq($item)->attr('href');
 		$i++;
 	}
+	$doc->unloadDocument();
 	return $subc;
 	j($subc);
 	
 }
 
 function save_img($marka, $model, $submodel, $img){
-	
+	$submodel = str_replace(['<','>'],['','',],$submodel);
 	$path = "imgs/$marka/$model/$submodel/";
 	file_exists($path) || mkdir($path, null, 1);
 	file_exists($path . 'auto.jpg') || file_put_contents($path . 'auto.jpg', file_get_contents($img));

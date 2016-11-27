@@ -26,8 +26,8 @@ if(!function_exists('s')){
 		  <?=$s;?>
 		</div>
 	<?php 
-	flush();
 	ob_flush();
+	flush();
 	}
 }
 if(!function_exists('j')){
