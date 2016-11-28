@@ -9,33 +9,34 @@ touch('checker.dd');
 $cats = get_main_categories();
 
 $needle = [
-	'Audi',
-	'Chery',
-	'Citroen',
-	'Geely',
-	'Hyundai',
-	'BMW',
-	'Chevrolet',
-	'Daewoo',
-	'Ford',
-	'Honda',
-	'Kia',
-	'Lifan',
-	'Mazda',
+	// 'Audi',
+	// 'Chery',
+	// 'Citroen',
+	// 'Geely',
+	// 'Hyundai',
+	// 'BMW',
+	// 'Chevrolet',
+	// 'Daewoo',
+	// 'Ford',
+	// 'Honda',
+	// 'Kia',
+	// 'Lifan',
+	// 'Mazda',
 	'Mitsubishi',
 	'Nissan',
 	'Opel',
 	'Peugeot',
 	'Renault',
 	'Skoda',
-	'Toyota',
-	'VW',
-	'Fiat',
-	'Infiniti',
-	'Volvo',
+	// 'Toyota',
+	// 'VW',
+	// 'Fiat',
+	// 'Infiniti',
+	// 'Volvo',
 ];
 foreach($cats as $cat){
 	if(!in_array($cat['title'], $needle)){
+		s($cat['title'] . ' - нет в списке', 1);
 		continue;
 	}
 	parse($cat);
@@ -166,8 +167,9 @@ function find_spares($ar, $page = 1){
 		}
 	}
 	$doc->unloadDocument();
-	s("Найдено $found запчастей");
-	
+	if($found){
+		s("Найдено $found запчастей");
+	}
 	// exit;
 }
 function csv_exists($_marka,$_model){
