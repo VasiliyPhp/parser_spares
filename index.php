@@ -46,14 +46,15 @@ if(isset($_POST['cats'])){
 		parse($cat);
 	}
 }else{
-	echo "<form method=post >";
+	echo "<form method=post target='_blank' >";
 	foreach($allCats as $cat ){
 		echo '<label><input name="cats[]" type=checkbox value="'.$cat.'" > '.$cat.'</label><br/>';
 	}
-	echo '<label> начальный id <input name=id  type=number required /></label><br/>';
+	echo '<label> начальный id <input name=id  type=number /></label><br/>';
 	echo '<input type=submit value=start />';
 	echo '</form>';
-	echo '<a href="stop.php" >stop</a>';
+	echo '<a href="stop.php" >stop</a></br>';
+	echo '<a onclick="return confirm(\'Are you shure\');" href="clear.php" >clear</a>';
 }
 function get_main_categories(){
 	$cats = get('cats');
@@ -247,8 +248,11 @@ function id($id = null){
 		return $id;
 	}
 	$id = 0;
-	if(file_exists('iddata')){
+	if( file_exists('iddata') ){
 		$id = (int)file_get_contents('iddata');
+	}
+	if( $id < 235 ) {
+		$id = 235;
 	}
 	$id++;
 	file_put_contents('iddata', $id);
@@ -256,7 +260,10 @@ function id($id = null){
 }
 function get_cats($href){
 	//список подкатегорий для выбранной подмодели
-	$list = file_get_contents($href);
+	$list = @file_get_contents($href);
+	if(!$list){
+		return [];
+	}
 	$doc = phpQuery::newDocument($list);
 	$list = pq('.parts_left a');
 	$subc = [];
