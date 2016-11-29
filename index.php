@@ -101,8 +101,8 @@ function parse($cat){
 		$i = 0;
 		foreach($submodelsDoc as $subm){
 			$_submodel = str_replace('/','-',trim(pq($subm)->text()));
-			if(exists($_marka,$_model,$_submodel)){
-				s("Пропускаем $_marka $_model $_submodel");
+			if(exists($_marka,$_submodel)){
+				s("Пропускаем $_marka $_submodel");
 				continue;
 			}
 			$subm_href = trim(pq($subm)->attr('href'));
@@ -112,15 +112,15 @@ function parse($cat){
 			$sub_cats = get_cats(SITE . $subm_href);
 			foreach($sub_cats as $sub_cat){
 				$_category = $sub_cat['title'];
-				if(exists($_marka,$_model,$_submodel,$_category)){
-					s("Пропускаем $_marka $_model $_submodel $_category");
+				if(exists($_marka,$_submodel,$_category)){
+					s("Пропускаем $_marka $_submodel $_category");
 					continue;
 				}
 			  $_href = $sub_cat['href'];
 				find_subcats(array_map('trim',compact('_marka','_model','_submodel','_category','_href')));
-				save($_marka,$_model,$_submodel,$_category);
+				save($_marka,$_submodel,$_category);
 			}
-		  save($_marka,$_model,$_submodel);
+		  save($_marka,$_submodel);
 		}
 		// j($cars);
 		
@@ -202,11 +202,11 @@ function find_spares($ar, $page = 1){
 	// exit;
 }
 function exists(){
-	$s = iconv('utf-8','cp1251',implode('-',func_get_args()));
-	return file_exists(("check_dir/$s"));
+	$s = iconv('utf-8','cp1251',translit(implode('-',func_get_args())));
+	return file_exists("check_dir/$s");
 }
 function save(){
-	$s = iconv('utf-8','cp1251',implode('-',func_get_args()));
+	$s = iconv('utf-8','cp1251',translit(implode('-',func_get_args())));
 	file_exists('check_dir') || mkdir('check_dir');
 	touch("check_dir/$s");
 }
@@ -238,7 +238,7 @@ function save_spare($ar){
 	$id = $_id? : id();
 	$data = array_map(function($i){
 		return iconv('utf-8','cp1251',$i);
-	},[$id, $_title, $_code, $_sku, $img_name, 'Запчасти '. $_marka, 'Запчасти '. $_model,  $_submodel]);
+	},[$id, $_title, $_code, $_sku, $img_name, 'Запчасти '. $_marka, 'Запчасти '. $_marka . ' ' . $_model,  $_submodel]);
 	fputcsv($fd,$data,';');
 	return $id;
 }
@@ -285,8 +285,9 @@ function translit($s) {
   $s = preg_replace("/\s+/", ' ', $s); // удаляем повторяющие пробелы
   $s = function_exists('mb_strtolower') ? mb_strtolower($s) : strtolower($s); // переводим строку в нижний регистр (иногда надо задать локаль)
   $s = strtr($s, array('а'=>'a','б'=>'b','в'=>'v','г'=>'g','д'=>'d','е'=>'e','ё'=>'e','ж'=>'j','з'=>'z','и'=>'i','й'=>'y','к'=>'k','л'=>'l','м'=>'m','н'=>'n','о'=>'o','п'=>'p','р'=>'r','с'=>'s','т'=>'t','у'=>'u','ф'=>'f','х'=>'h','ц'=>'c','ч'=>'ch','ш'=>'sh','щ'=>'shch','ы'=>'y','э'=>'e','ю'=>'yu','я'=>'ya','ъ'=>'','ь'=>''));
-  $s = preg_replace("/[^0-9a-z]/i", "_", $s); // очищаем строку от недопустимых символов
-  $s = str_replace(" ", "_", $s); // заменяем пробелы знаком
+  $s = preg_replace("/[^A-z\d]/i", "_", $s); // заменяем все двойные подчеркивания на одно
+  $s = preg_replace("/_+/i", "_", $s); // заменяем все двойные подчеркивания на одно
+  // $s = preg_replace("/^_(.*)_$/i", "$1", $s); // заменяем подчеркивания в конце и в начале слова на ''
   return $s; // возвращаем результат
 }
 function save_img($marka, $model, $submodel, $img){
@@ -311,4 +312,5 @@ function find_images($url){
 	}
 	return [null];
 	// exit();
+  $s = preg_replace("/[^0-9a-z]/i", "_", $s); // очищаем строку от недопустимых символов
 }
