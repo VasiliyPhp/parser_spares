@@ -48,12 +48,12 @@ if(isset($_POST['cats'])){
 }else{
 	echo "<form method=post >";
 	foreach($allCats as $cat ){
-		echo '<input name="cats[]" type=checkbox value="'.$cat.'" > '.$cat.'<br/>';
+		echo '<label><input name="cats[]" type=checkbox value="'.$cat.'" > '.$cat.'</label><br/>';
 	}
 	echo '<label> начальный id <input name=id  type=number required /></label><br/>';
 	echo '<input type=submit value=start />';
 	echo '</form>';
-	echo '<a href="stop.php" target=_blank >stop</a>';
+	echo '<a href="stop.php" >stop</a>';
 }
 function get_main_categories(){
 	$cats = get('cats');
