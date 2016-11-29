@@ -1,45 +1,59 @@
 <?php
 
-require 'phpQuery/phpQuery.php';
-require 'helper_functions.php';
-const SITE = 'http://euroauto.ru';
-set_time_limit(-1);
-touch('checker.dd');
-// remove('cats');
-$cats = get_main_categories();
-
-$needle = [
-	// 'Audi',
-	// 'Chery',
-	// 'Citroen',
-	// 'Geely',
-	// 'Hyundai',
-	// 'BMW',
-	// 'Chevrolet',
-	// 'Daewoo',
-	// 'Ford',
-	// 'Honda',
-	// 'Kia',
-	// 'Lifan',
-	// 'Mazda',
+$allCats = [
+	'Audi',
+	'Chery',
+	'Citroen',
+	'Geely',
+	'Hyundai',
+	'BMW',
+	'Chevrolet',
+	'Daewoo',
+	'Ford',
+	'Honda',
+	'Kia',
+	'Lifan',
+	'Mazda',
 	'Mitsubishi',
 	'Nissan',
 	'Opel',
 	'Peugeot',
 	'Renault',
 	'Skoda',
-	// 'Toyota',
-	// 'VW',
-	// 'Fiat',
-	// 'Infiniti',
-	// 'Volvo',
+	'Toyota',
+	'VW',
+	'Fiat',
+	'Infiniti',
+	'Volvo',
 ];
-foreach($cats as $cat){
-	if(!in_array($cat['title'], $needle)){
-		s($cat['title'] . ' - нет в списке', 1);
-		continue;
+const SITE = 'http://euroauto.ru';
+
+if(isset($_POST['cats'])){
+	$needle = $_POST['cats'];
+	id($_POST['id']);
+	require 'phpQuery/phpQuery.php';
+	require 'helper_functions.php';
+	set_time_limit(-1);
+	touch('checker.dd');
+	// remove('cats');
+	$cats = get_main_categories();
+
+	foreach($cats as $cat){
+		if(!in_array($cat['title'], $needle)){
+			s($cat['title'] . ' - нет в списке', 1);
+			continue;
+		}
+		parse($cat);
 	}
-	parse($cat);
+}else{
+	echo "<form method=post >";
+	foreach($allCats as $cat ){
+		echo '<input name="cats[]" type=checkbox value="'.$cat.'" > '.$cat.'<br/>';
+	}
+	echo '<label> начальный id <input name=id  type=number required /></label><br/>';
+	echo '<input type=submit value=start />';
+	echo '</form>';
+	echo '<a href="stop.php" target=_blank >stop</a>';
 }
 function get_main_categories(){
 	$cats = get('cats');
@@ -74,10 +88,6 @@ function parse($cat){
 		$_model = trim(pq($model)->find('.item-model-info')->text());
 		$_model = str_replace('/','-',$_model);
 		$href  = trim(pq($model)->attr('href'));
-		if(csv_exists($_marka,$_model)){
-			s("Пропускаем $_marka $_model");
-			continue;
-		}
 		if(!$href){
 			continue;
 		}
@@ -89,17 +99,27 @@ function parse($cat){
 		$cars = [];
 		$i = 0;
 		foreach($submodelsDoc as $subm){
-			$subm_href = trim(pq($subm)->attr('href'));
 			$_submodel = str_replace('/','-',trim(pq($subm)->text()));
+			if(exists($_marka,$_model,$_submodel)){
+				s("Пропускаем $_marka $_model $_submodel");
+				continue;
+			}
+			$subm_href = trim(pq($subm)->attr('href'));
 		  $img       = trim(pq($subm)->find('img')->attr('src'));
 	   	save_img($_marka, $_model, $_submodel, $img);
 			// поиск категорий для подмоделей
 			$sub_cats = get_cats(SITE . $subm_href);
 			foreach($sub_cats as $sub_cat){
 				$_category = $sub_cat['title'];
-				$_href = $sub_cat['href'];
+				if(exists($_marka,$_model,$_submodel,$_category)){
+					s("Пропускаем $_marka $_model $_submodel $_category");
+					continue;
+				}
+			  $_href = $sub_cat['href'];
 				find_subcats(array_map('trim',compact('_marka','_model','_submodel','_category','_href')));
+				save($_marka,$_model,$_submodel,$_category);
 			}
+		  save($_marka,$_model,$_submodel);
 		}
 		// j($cars);
 		
@@ -111,7 +131,10 @@ function parse($cat){
 //поиск подкатегории в катерии запчасти 
 function find_subcats($ar){
 	extract($ar);
-	$doc = file_get_contents($_href);
+	$doc = @file_get_contents($_href);
+	if(!$doc){
+		return false;
+	}
 	$doc = phpQuery::newDocument($doc);
 	$list = pq('.parts_left .ulplusminus a');
 	$cats = [];
@@ -154,9 +177,14 @@ function find_spares($ar, $page = 1){
 		$found++;
 		// s('Сохнаняем новую запчасть '. $label . ' ' . $_href);
 		$ar['_title'] = pq('a[itemprop=name]',$item)->text();
-		$ar['_img']   = pq('.item-img img',$item)->attr('content');
+		$images = find_images(pq('.item-img img',$item)->attr('content'));
 		$ar['_sku']   = trim(str_replace('Ориг. номер:','', pq('.item-line_info:eq(0)',$item)->text()));
-		save_spare($ar);
+		$id = null;
+		foreach($images as $image){
+			$ar['_id'] = $id;
+			$ar['_img'] = $image;
+		  $id = save_spare($ar);
+		}
 	}
 	if($pagi = pq('#pagination-block')){
 		$cur_page = (int)$pagi->attr('data-currentpage');
@@ -172,42 +200,55 @@ function find_spares($ar, $page = 1){
 	}
 	// exit;
 }
-function csv_exists($_marka,$_model){
-	return file_exists("csv/$_marka/$_model" . '.csv');
+function exists(){
+	$s = iconv('utf-8','cp1251',implode('-',func_get_args()));
+	return file_exists(("check_dir/$s"));
+}
+function save(){
+	$s = iconv('utf-8','cp1251',implode('-',func_get_args()));
+	file_exists('check_dir') || mkdir('check_dir');
+	touch("check_dir/$s");
 }
 function save_spare($ar){
 	extract(array_map('trim',$ar));
 	$csv_path = "csv/$_marka/";
 	$img_path = 'spares_img/';
-	$img_name = substr( md5($_sku),0,9 ) . '.jpg';
 	file_exists($img_path) || mkdir($img_path,null,1);
 	file_exists($csv_path) || mkdir($csv_path,null,1);
-	$img_bin = @file_get_contents($_img);
-	if($img_bin){
-		file_put_contents($img_path.$img_name,$img_bin);
+	if($_img){
+		$img_name = md5($_img) . '.jpg';
+		$img_bin = @file_get_contents($_img);
+		if($img_bin){
+			file_put_contents($img_path.$img_name,$img_bin);
+		}else{
+			$img_name = '';
+		}
 	}else{
-		// s('нет картинки ' . $_img,1);
-		$img_name = 'no image';
+		$img_name = '';
 	}
 	if(!file_exists($csv_path.$_model.'.csv')){
-	  $header = ['IE_XML_ID','IE_NAME','IP_PROP9','IP_PROP13','IC_GROUP0','IC_GROUP1','IC_GROUP2','CV_PRICE_1','CV_CURRENCY_1'];
+	  $header = ['IE_XML_ID','IE_NAME','IE_CODE','IP_PROP9','IP_PROP13','IC_GROUP0','IC_GROUP1','IC_GROUP2'];
 		$fd = fopen($csv_path.$_model.'.csv', 'a');
 		fputcsv($fd,$header,';');
 	}else{
 	  $fd = fopen($csv_path.$_model.'.csv', 'a');
 	}
+	$_code = translit($_title);
+	$id = $_id? : id();
 	$data = array_map(function($i){
 		return iconv('utf-8','cp1251',$i);
-	},[id(), $_title,$_sku,$img_name,$_submodel,$_category,$_subcat,'','RUB']);
+	},[$id, $_title, $_code, $_sku, $img_name, 'Запчасти '. $_marka, 'Запчасти '. $_model,  $_submodel]);
 	fputcsv($fd,$data,';');
+	return $id;
 }
-function id(){
+function id($id = null){
+	if($id){
+		file_put_contents('iddata', $id);
+		return $id;
+	}
 	$id = 0;
 	if(file_exists('iddata')){
 		$id = (int)file_get_contents('iddata');
-	}
-	if($id<240){
-		$id = 240;
 	}
 	$id++;
 	file_put_contents('iddata', $id);
@@ -230,11 +271,37 @@ function get_cats($href){
 	j($subc);
 	
 }
-
+function translit($s) {
+  $s = (string) $s; // преобразуем в строковое значение
+  $s = strip_tags($s); // убираем HTML-теги
+  $s = trim($s); // убираем пробелы в начале и конце строки
+  $s = preg_replace("/\s+/", ' ', $s); // удаляем повторяющие пробелы
+  $s = function_exists('mb_strtolower') ? mb_strtolower($s) : strtolower($s); // переводим строку в нижний регистр (иногда надо задать локаль)
+  $s = strtr($s, array('а'=>'a','б'=>'b','в'=>'v','г'=>'g','д'=>'d','е'=>'e','ё'=>'e','ж'=>'j','з'=>'z','и'=>'i','й'=>'y','к'=>'k','л'=>'l','м'=>'m','н'=>'n','о'=>'o','п'=>'p','р'=>'r','с'=>'s','т'=>'t','у'=>'u','ф'=>'f','х'=>'h','ц'=>'c','ч'=>'ch','ш'=>'sh','щ'=>'shch','ы'=>'y','э'=>'e','ю'=>'yu','я'=>'ya','ъ'=>'','ь'=>''));
+  $s = preg_replace("/[^0-9a-z]/i", "_", $s); // очищаем строку от недопустимых символов
+  $s = str_replace(" ", "_", $s); // заменяем пробелы знаком
+  return $s; // возвращаем результат
+}
 function save_img($marka, $model, $submodel, $img){
 	$submodel = str_replace(['<','>'],['','',],$submodel);
 	$path = "imgs/$marka/$model/$submodel/";
 	file_exists($path) || mkdir($path, null, 1);
 	file_exists($path . 'auto.jpg') || file_put_contents($path . 'auto.jpg', file_get_contents($img));
-	
+}
+function find_images($url){
+	if(strpos($url, '/photo/parts/new') === false){
+		return [$url];
+	}
+	$rs =  @file_get_contents(preg_replace('~/\d+\.jpg$~','',$url));
+	if($rs){
+		$items = json_decode($rs)->items;
+		if(!count($items)){
+			return [null];
+		}
+		return array_map(function($i){
+			return SITE . '/' . $i->uri;
+		}, $items);
+	}
+	return [null];
+	// exit();
 }

@@ -1,3 +1,4 @@
 <?php
 
-unlink('checker.dd');
+@unlink('checker.dd');
+header('Location: .');
