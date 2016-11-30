@@ -136,6 +136,7 @@ function find_subcats($ar){
 	if(!$doc){
 		return false;
 	}
+	s("$_marka, $_submodel, $_category");
 	$doc = phpQuery::newDocument($doc);
 	$list = pq('.parts_left .ulplusminus a');
 	$cats = [];
@@ -163,7 +164,6 @@ function find_spares($ar, $page = 1){
 	if($page>1){
 		$_href .= '?page=' . $page;
 	}
-	s(str_repeat('&nbsp;', ($page-1)*3). "$_marka, $_submodel, $_subcat, page $page");
 	$doc = @file_get_contents($_href);
 	if(!$doc){
 		return ;
@@ -197,7 +197,7 @@ function find_spares($ar, $page = 1){
 	}
 	$doc->unloadDocument();
 	if($found){
-		s("Найдено $found запчастей");
+		// s("Найдено $found запчастей");
 	}
 	// exit;
 }
