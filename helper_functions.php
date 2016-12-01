@@ -15,6 +15,16 @@ if(!function_exists('x')){
 
 if(!function_exists('s')){
 	function s($s, $t=0){
+		if(php_sapi_name() == 'cli'){
+			if($t){
+				echo '~~~~~~~~~' . PHP_EOL;
+			  echo $s . PHP_EOL;
+				echo '~~~~~~~~~' . PHP_EOL;
+			}else{
+			  echo $s . PHP_EOL;
+			}
+			return ;
+		}
 		switch($t){
 		case 0:
 		  $color='#485';break;
