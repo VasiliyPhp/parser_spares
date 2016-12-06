@@ -44,7 +44,6 @@ if(isset($_POST['cats'])){
 		}
 		parse($cat);
 	}
-
 }else{
 	echo "<form method=post target='_blank' >";
 	foreach($allCats as $cat ){
@@ -55,4 +54,4 @@ if(isset($_POST['cats'])){
 	echo '</form>';
 	echo '<a href="stop.php" >stop</a></br>';
 	echo '<a onclick="return confirm(\'Are you shure\');" href="clear.php" >clear</a>';
-}if(isset($_POST['cats'])){
+}
