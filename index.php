@@ -1,7 +1,4 @@
 <?php
-
-exec('chcp 65001');
-
 $allCats = [
 	'Audi',
 	'Chery',
