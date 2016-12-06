@@ -28,9 +28,7 @@ $allCats = [
 ];
 const SITE = 'http://euroauto.ru';
 
-	require 'phpQuery/phpQuery.php';
-	require 'helper_functions.php';
-	require 'core.php';
+	require 'vendor/autoload.php';
 	set_time_limit(-1);
 	touch('checker.dd');
 	$needle = $allCats;
