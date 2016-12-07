@@ -139,18 +139,20 @@ function find_subcats($cats){
 			// find_spare_links($ar, &$a_href);
 		}
 		$doc->unloadDocument();
-		find_links($subcats_hrefs);
+		foreach($subcats_hrefs as $subcats_href){
+			$links = 
+			find_links($subcats_href,$links);
+		}
 	}
 	return ;
 	
 }
 
-function find_links($ar, $page = 1){
+function find_links($_href, &$links, $page = 1){
 	if(!file_exists('checker.dd')){
 		s('Вызвана остановка',1); exit;
 	}
 	$found = 0;
-	extract($ar);
 	if($page>1){
 		$_href .= '?page=' . $page;
 	}
