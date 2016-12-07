@@ -1,6 +1,6 @@
 <?php
 
-
+// поиск всех марок авто
 function get_main_categories(){
 	$cats = get('cats');
 	if(!$cats){
@@ -19,6 +19,7 @@ function get_main_categories(){
 	return ($cats) ? : [];
 }
 
+// поиск подмоделей
 function parse($cat){
 	//название марки
 	$_marka = $cat['title'];
@@ -30,8 +31,9 @@ function parse($cat){
 	
 	$hrefs = [];
 	$mcurl = new Curl\MultiCurl;
-	
-	$mcurl->success(function($instance) use ($hrefs){
+	$mcurl->setConcurrency(100);
+	$mcurl->setConnectTimeout(2);
+	$mcurl->success(function($instance) use (&$hrefs, $_marka){
 		$doc = $instance->response;
 		$submodelsDoc = phpQuery::newDocument($doc)->find('.model-list a');
 		foreach($submodelsDoc as $subm){
@@ -41,11 +43,15 @@ function parse($cat){
 				continue;
 			}
 			$subm_href = trim(pq($subm)->attr('href'));
-		  $img       = trim(pq($subm)->find('img')->attr('src'));
-	   	save_img($_marka, $_model, $_submodel, $img);
-			$hrefs[] = $subm_href;
-			s($subm_href);
+			$img       = trim(pq($subm)->find('img')->attr('src'));
+			// save_img($subm_href,$img);
+			$hrefs[] = [
+				'subm_href' => $subm_href,
+				'img' => [str_replace('/auto/cars/','',$subm_href), $img],
+			];
+			// s($subm_href);
 		}
+		$submodelsDoc->unloadDocument();
 	});
 	foreach($models as $model){
 		
@@ -59,70 +65,87 @@ function parse($cat){
 		$mcurl->addGet(SITE . $href);
 	}
 	$mcurl->start();
-	j($hrefs);
-	{ 
-	  return;
-		// поиск подмоделей 
-		$submodelsDoc && $submodelsDoc->unloadDocument();
-		$submodelsDoc = file_get_contents(SITE . $href);
-		$submodelsDoc = phpQuery::newDocument($submodelsDoc)->find('.model-list a');
-		foreach($submodelsDoc as $subm){
-			$_submodel = str_replace('/','-',trim(pq($subm)->text()));
-			if(exists($_marka,$_submodel)){
-				s("Пропускаем $_marka $_submodel");
-				continue;
-			}
-			$subm_href = trim(pq($subm)->attr('href'));
-		  $img       = trim(pq($subm)->find('img')->attr('src'));
-	   	save_img($_marka, $_model, $_submodel, $img);
-			// поиск категорий для подмоделей
-			$sub_cats = get_cats(SITE . $subm_href);
-			foreach($sub_cats as $sub_cat){
-				$_category = $sub_cat['title'];
-				if(exists($_marka,$_submodel,$_category)){
-					s("Пропускаем $_marka $_submodel $_category");
-					continue;
-				}
-			  $_href = $sub_cat['href'];
-				find_subcats(array_map('trim',compact('_marka','_model','_submodel','_category','_href')));
-				save($_marka,$_submodel,$_category);
-			}
-		  save($_marka,$_submodel);
-		}
+	
+	// проходимся по каждой собранной ссылке подмодели 
+	// собираем все картинки поделей
+	foreach($hrefs as $__img_src){
+		file_exists('imgs/' . $__img_src['img'][0]) || mkdir('imgs/' . $__img_src['img'][0],null,1);
+		$mcurl->addDownload($__img_src['img'][1],'imgs/' . $__img_src['img'][0] . 'auto.jpg');
+	}
+	$mcurl->start();
+	
+	// проходимся по каждой собранной ссылке подмодели 
+	// собираем основные категории для каждой подмодели
+	$catsList = [];
+	$mcurl->success(function ($instance) use (&$catsList){
 		
+		$doc = $instance->response;
+		
+		$subcatsDoc = phpQuery::newDocument($doc)->find('.model-list a');
+		$list = pq('.parts_left a');
+		// echo $list;exit;
+		foreach($list as $item){
+			array_push($catsList, SITE . pq($item)->attr('href'));
+		}
+		// j($catsList);
+		$subcatsDoc->unloadDocument();
+		
+	});
+	foreach($hrefs as $__subm_href){
+		
+		$href = $__subm_href['subm_href'];
+		
+		$mcurl->addGet(SITE . $href);
+		
+		// foreach($sub_cats as $sub_cat){
+			// $_category = $sub_cat['title'];
+			// if(exists($_marka,$_submodel,$_category)){
+				// s("Пропускаем $_marka $_submodel $_category");
+				// continue;
+			// }
+		  // $_href = $sub_cat['href'];
+		// find_subcats(array_map('trim',compact('_marka','_model','_submodel','_category','_href')));
+			// save($_marka,$_submodel,$_category);
+		// }
+	 // save($_marka,$_submodel);
 	}
 	
-	// echo $models;
-	// j($models);
+	$mcurl->start();
+	$mcurl->close();
+	find_subcats($catsList);
+	
+	
 }
 //поиск подкатегории в катерии запчасти 
-function find_subcats($ar){
-	extract($ar);
-	$doc = @file_get_contents($_href);
-	if(!$doc){
-		return false;
+function find_subcats($cats){
+	if(!file_exists('checker.dd')){
+		s('Вызвана остановка',1); exit;
 	}
-	s("$_marka, $_submodel, $_category");
-	$doc = phpQuery::newDocument($doc);
-	$list = pq('.parts_left .ulplusminus a');
-	$cats = [];
-	$i = 0;
-	foreach($list as $cat){
-		$a_href = [];
-		$cats[$i]['title'] = $_subcat = pq($cat)->text();
-		$cats[$i]['href'] = $_href2 = pq($cat)->attr('href');
-		$ar['_href'] = SITE . $_href2;
-		$ar['_subcat'] = $_subcat;
-		// find_spare_links($ar, &$a_href);
-		$i++;
+	foreach($cats as $cat){
+		$doc = @file_get_contents($cat);
+		if(!$doc){
+			continue;
+		}
+		$doc = phpQuery::newDocument($doc);
+		$list = pq('.parts_left .ulplusminus a');
+		$subcats_hrefs = [];
+		foreach($list as $subcats){
+			// $a_href = [];
+			// $cats[$i]['title'] = $_subcat = pq($cat)->text();
+			// $cats[$i]['href'] = $_href2 = pq($cat)->attr('href');
+			$subcats_hrefs[] = SITE . pq($subcats)->attr('href');
+			// $ar['_href'] = SITE . $_href2;
+			// $ar['_subcat'] = $_subcat;
+			// find_spare_links($ar, &$a_href);
+		}
+		$doc->unloadDocument();
+		find_links($subcats_hrefs);
 	}
-	$doc->unloadDocument();
-	// j($cats);
-	// exit;
+	return ;
+	
 }
 
-
-function find_spares($ar, $page = 1){
+function find_links($ar, $page = 1){
 	if(!file_exists('checker.dd')){
 		s('Вызвана остановка',1); exit;
 	}
@@ -231,26 +254,6 @@ function id($id = null){
 	}
 	return $id;
 }
-function get_cats($href){
-	//список подкатегорий для выбранной подмодели
-	$list = @file_get_contents($href);
-	if(!$list){
-		return [];
-	}
-	$doc = phpQuery::newDocument($list);
-	$list = pq('.parts_left a');
-	$subc = [];
-	$i = 0;
-	foreach($list as $item){
-		$subc[$i]['title'] = trim(pq('.group', $item)->text());
-		$subc[$i]['href'] = SITE . pq($item)->attr('href');
-		$i++;
-	}
-	$doc->unloadDocument();
-	return $subc;
-	j($subc);
-	
-}
 function translit($s) {
   $s = (string) $s; // преобразуем в строковое значение
   $s = strip_tags($s); // убираем HTML-теги
@@ -263,9 +266,8 @@ function translit($s) {
   // $s = preg_replace("/^_(.*)_$/i", "$1", $s); // заменяем подчеркивания в конце и в начале слова на ''
   return $s; // возвращаем результат
 }
-function save_img($marka, $model, $submodel, $img){
-	$submodel = str_replace(['<','>'],['','',],$submodel);
-	$path = "imgs/$marka/$model/$submodel/";
+function save_img($href, $img){
+	$path = str_replace('/auto/cars/','',$href);
 	file_exists($path) || mkdir($path, null, 1);
 	file_exists($path . 'auto.jpg') || file_put_contents($path . 'auto.jpg', file_get_contents($img));
 }

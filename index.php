@@ -1,3 +1,9 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Парсер запчастей</title>
+	</head>
+	<body>
 <?php
 $allCats = [
 	'Audi',
@@ -31,7 +37,7 @@ if(isset($_POST['cats'])){
 	set_time_limit(-1);
 	touch('checker.dd');
 	// remove('cats');
-	$needle = $allCats;
+	$needle = $_POST['cats'];
 	$cats = get_main_categories();
 
 	foreach($cats as $cat){
