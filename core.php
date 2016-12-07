@@ -27,9 +27,28 @@ function parse($cat){
 	$models = file_get_contents(SITE . $cat['href']);
 	$models = phpQuery::newDocument($models);
 	$models = pq('.model-list a');
+	
+	$hrefs = [];
+	$mcurl = new Curl\MultiCurl;
+	
+	$mcurl->success(function($instance) use ($hrefs){
+		$doc = $instance->response;
+		$submodelsDoc = phpQuery::newDocument($doc)->find('.model-list a');
+		foreach($submodelsDoc as $subm){
+			$_submodel = str_replace('/','-',trim(pq($subm)->text()));
+			if(exists($_marka,$_submodel)){
+				s("Пропускаем $_marka $_submodel");
+				continue;
+			}
+			$subm_href = trim(pq($subm)->attr('href'));
+		  $img       = trim(pq($subm)->find('img')->attr('src'));
+	   	save_img($_marka, $_model, $_submodel, $img);
+			$hrefs[] = $subm_href;
+			s($subm_href);
+		}
+	});
 	foreach($models as $model){
 		
-		// $img   = pq($model)->find('img')->attr('src');
 		//название модели 
 		$_model = trim(pq($model)->find('.item-model-info')->text());
 		$_model = str_replace('/','-',$_model);
@@ -37,13 +56,16 @@ function parse($cat){
 		if(!$href){
 			continue;
 		}
-		
+		$mcurl->addGet(SITE . $href);
+	}
+	$mcurl->start();
+	j($hrefs);
+	{ 
+	  return;
 		// поиск подмоделей 
 		$submodelsDoc && $submodelsDoc->unloadDocument();
 		$submodelsDoc = file_get_contents(SITE . $href);
 		$submodelsDoc = phpQuery::newDocument($submodelsDoc)->find('.model-list a');
-		$cars = [];
-		$i = 0;
 		foreach($submodelsDoc as $subm){
 			$_submodel = str_replace('/','-',trim(pq($subm)->text()));
 			if(exists($_marka,$_submodel)){
@@ -67,7 +89,6 @@ function parse($cat){
 			}
 		  save($_marka,$_submodel);
 		}
-		// j($cars);
 		
 	}
 	
@@ -87,11 +108,12 @@ function find_subcats($ar){
 	$cats = [];
 	$i = 0;
 	foreach($list as $cat){
+		$a_href = [];
 		$cats[$i]['title'] = $_subcat = pq($cat)->text();
 		$cats[$i]['href'] = $_href2 = pq($cat)->attr('href');
 		$ar['_href'] = SITE . $_href2;
 		$ar['_subcat'] = $_subcat;
-		find_spares($ar);
+		// find_spare_links($ar, &$a_href);
 		$i++;
 	}
 	$doc->unloadDocument();
