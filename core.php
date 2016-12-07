@@ -140,19 +140,51 @@ function find_subcats($cats){
 		}
 		$doc->unloadDocument();
 		foreach($subcats_hrefs as $subcats_href){
-			$links = 
+			$links = [];
 			find_links($subcats_href,$links);
+			// j($links);
+			find_spares($links);
 		}
 	}
 	return ;
 	
 }
-
+function find_spares($links){
+	
+	$mcurl = new Curl\MultiCurl;
+	$mcurl->setConcurrency(100);
+	$mcurl->setConnectTimeout(2);
+	
+	foreach($links as $link){
+		$mcurl->addGet($link);
+	}
+	$mcurl->success(function($instance){
+		echo '<pre>';
+		echo $instance->url;
+		echo htmlspecialchars($instance->response); die;
+		echo $doc = phpQuery::newDocument($instance->response);die;
+		echo '<br>' ,$oem = pq('#orignr')->attr('value');
+		echo pq('.breadcrumb');
+		echo '<br>' ,$oem = pq('.breadcrumb li:eq(2)')->text(); 
+		echo '<br>' ,$oem = pq('.breadcrumb li:eq(3)')->text(); 
+		echo '<br>' ,$oem = pq('.breadcrumb li:eq(4)')->text(); 
+		echo '<br>' ,$oem = pq('.breadcrumb li:eq(5)')->text(); 
+		echo '<br>' ,$oem = pq('.breadcrumb li:eq(6)')->text(); die;
+		echo $oem = pq('#theContent>.row');die;
+		
+		echo $doc;
+		$doc->unloadDocument();
+	});
+	
+	$mcurl->start();
+	$mcurl->close();
+	
+}
 function find_links($_href, &$links, $page = 1){
 	if(!file_exists('checker.dd')){
 		s('Вызвана остановка',1); exit;
 	}
-	$found = 0;
+	
 	if($page>1){
 		$_href .= '?page=' . $page;
 	}
@@ -163,35 +195,32 @@ function find_links($_href, &$links, $page = 1){
 	$doc = phpQuery::newDocument($doc);
 	$list = pq('.parts-list .parts-item_box');
 	foreach($list as $item){
-		if( !($label = pq('.label-new',$item)->text()) ){
+		// if( !($label = pq('.label-new',$item)->text()) ){
   		// s('Пропускаем б/у запчасть',1);
-			continue;
-		}
-		$found++;
-		// s('Сохнаняем новую запчасть '. $label . ' ' . $_href);
-		$ar['_title'] = pq('a[itemprop=name]',$item)->text();
-		$images = find_images(pq('.item-img img',$item)->attr('content'));
-		$ar['_sku']   = trim(str_replace('Ориг. номер:','', pq('.item-line_info:eq(0)',$item)->text()));
-		$id = null;
-		foreach($images as $image){
-			$ar['_id'] = $id;
-			$ar['_img'] = $image;
-		  $id = save_spare($ar);
-		}
+			// continue;
+		// }
+	
+		$links[] = SITE . pq('.boxheader a',$item)->attr('href');
+		// $ar['_title'] = pq('a[itemprop=name]',$item)->text();
+		// $images = find_images(pq('.item-img img',$item)->attr('content'));
+		// $ar['_sku']   = trim(str_replace('Ориг. номер:','', pq('.item-line_info:eq(0)',$item)->text()));
+		// $id = null;
+		// foreach($images as $image){
+			// $ar['_id'] = $id;
+			// $ar['_img'] = $image;
+		  // $id = save_spare($ar);
+		// }
 	}
 	if($pagi = pq('#pagination-block')){
 		$cur_page = (int)$pagi->attr('data-currentpage');
 		$end_page = (int)$pagi->attr('data-endpage');
 		if($cur_page < $end_page){
     	$doc->unloadDocument();
-			find_spares($ar, ++$cur_page);
+			find_links($_href, $links, ++$cur_page);
 		}
+	}else{
+		$doc->unloadDocument();
 	}
-	$doc->unloadDocument();
-	if($found){
-		// s("Найдено $found запчастей");
-	}
-	// exit;
 }
 function exists(){
 	$s = iconv('utf-8','cp1251',translit(implode('-',func_get_args())));
