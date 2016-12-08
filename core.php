@@ -174,17 +174,36 @@ function find_spares($links){
 		$doc = phpQuery::newDocument($instance->response);
 		$spare['oem']          = pq('#orignr')->attr('value');
 		$spare['title']        = trim(pq('#theContent .page-header h1')->text());
-
+		
+		$is_BU = strpos($instance->url, 'part/new/') === false;
+		// поиск дубликата если БУ
+		if($is_BU){
+			if(exists($spare['oem'])){
+				s();
+				return ;
+			}
+		}		
+		
 		// поиск производителя 
-		 $tmp = pq('#theContent>.row>div:eq(1) div');
+		$tmp = pq('#theContent>.row>div:eq(1) div');
 		foreach($tmp as $i){
 			pq('label',$i)->text();
 			if(strpos(trim(pq('label',$i)->text()), 'Производитель:')!==false ){
 				$spare['manufacturer'] = trim(str_replace( 'Производитель:', '', pq($i)->text()));
 			}
 		}
+		
+		$images = pq('#block_img .thumbnail img');
+		$img = [];
+		foreach($images as $image){
+			$img[] = pq($image)->attr('src');
+		}
+		j($img);
+		
+		
 		j($spare);
-		echo $doc;
+		save_spare();
+		
 		$doc->unloadDocument();
 	});
 	
