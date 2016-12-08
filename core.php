@@ -45,8 +45,10 @@ function parse($cat){
 			$subm_href = trim(pq($subm)->attr('href'));
 			$img       = trim(pq($subm)->find('img')->attr('src'));
 			// save_img($subm_href,$img);
-			$hrefs[] = [
+			$hrefs[SITE . $subm_href] = [
+				'marka' => $_marka,
 				'subm_href' => $subm_href,
+				'submodel' => $_submodel,
 				'img' => [str_replace('/auto/cars/','',$subm_href), $img],
 			];
 			// s($subm_href);
@@ -69,7 +71,10 @@ function parse($cat){
 	// проходимся по каждой собранной ссылке подмодели 
 	// собираем все картинки поделей
 	foreach($hrefs as $__img_src){
-		file_exists('imgs/' . $__img_src['img'][0]) || mkdir('imgs/' . $__img_src['img'][0],null,1);
+		if(file_exists('imgs/' . $__img_src['img'][0] . 'auto.jpg')){
+			continue;
+		}
+		mkdir('imgs/' . $__img_src['img'][0],null,1);
 		$mcurl->addDownload($__img_src['img'][1],'imgs/' . $__img_src['img'][0] . 'auto.jpg');
 	}
 	$mcurl->start();
@@ -77,17 +82,17 @@ function parse($cat){
 	// проходимся по каждой собранной ссылке подмодели 
 	// собираем основные категории для каждой подмодели
 	$catsList = [];
-	$mcurl->success(function ($instance) use (&$catsList){
+	$mcurl->success(function ($instance) use (&$catsList, $hrefs){
 		
 		$doc = $instance->response;
-		
+		$submodel = $hrefs[$instance->url]['submodel'];
+		$marka = $hrefs[$instance->url]['marka'];
 		$subcatsDoc = phpQuery::newDocument($doc)->find('.model-list a');
 		$list = pq('.parts_left a');
 		// echo $list;exit;
 		foreach($list as $item){
-			array_push($catsList, SITE . pq($item)->attr('href'));
+			array_push($catsList, ['marka'=>$marka, 'submodel'=>$submodel, 'category'=>pq($item)->text(), 'href' => SITE . pq($item)->attr('href')]);
 		}
-		// j($catsList);
 		$subcatsDoc->unloadDocument();
 		
 	});
@@ -122,7 +127,10 @@ function find_subcats($cats){
 		s('Вызвана остановка',1); exit;
 	}
 	foreach($cats as $cat){
-		$doc = @file_get_contents($cat);
+		$_marka = $cat['marka'];
+		$_submodel = $cat['submodel'];
+		$_category = $cat['category'];
+		$doc = @file_get_contents($cat['href']);
 		if(!$doc){
 			continue;
 		}
@@ -133,7 +141,7 @@ function find_subcats($cats){
 			// $a_href = [];
 			// $cats[$i]['title'] = $_subcat = pq($cat)->text();
 			// $cats[$i]['href'] = $_href2 = pq($cat)->attr('href');
-			$subcats_hrefs[] = SITE . pq($subcats)->attr('href');
+			$subcats_hrefs[] = ['marka'=>$_marka,'submodel'=>$_submodel,'category'=>$_category, '_href'=>SITE . pq($subcats)->attr('href')];
 			// $ar['_href'] = SITE . $_href2;
 			// $ar['_subcat'] = $_subcat;
 			// find_spare_links($ar, &$a_href);
@@ -141,8 +149,8 @@ function find_subcats($cats){
 		$doc->unloadDocument();
 		foreach($subcats_hrefs as $subcats_href){
 			$links = [];
+			
 			find_links($subcats_href,$links);
-			// j($links);
 			find_spares($links);
 		}
 	}
@@ -156,22 +164,26 @@ function find_spares($links){
 	$mcurl->setConnectTimeout(2);
 	
 	foreach($links as $link){
-		$mcurl->addGet($link);
+		$mcurl->addGet($link['href']);
 	}
-	$mcurl->success(function($instance){
-		echo '<pre>';
-		echo $instance->url;
-		echo htmlspecialchars($instance->response); die;
-		echo $doc = phpQuery::newDocument($instance->response);die;
-		echo '<br>' ,$oem = pq('#orignr')->attr('value');
-		echo pq('.breadcrumb');
-		echo '<br>' ,$oem = pq('.breadcrumb li:eq(2)')->text(); 
-		echo '<br>' ,$oem = pq('.breadcrumb li:eq(3)')->text(); 
-		echo '<br>' ,$oem = pq('.breadcrumb li:eq(4)')->text(); 
-		echo '<br>' ,$oem = pq('.breadcrumb li:eq(5)')->text(); 
-		echo '<br>' ,$oem = pq('.breadcrumb li:eq(6)')->text(); die;
-		echo $oem = pq('#theContent>.row');die;
-		
+	$mcurl->success(function($instance) use ($links){
+		$item = $links[$instance->url];
+		$spare['marka'] = $item['marka'];
+		$spare['submodel'] = $item['submodel'];
+		$spare['category'] = $item['category'];
+		$doc = phpQuery::newDocument($instance->response);
+		$spare['oem']          = pq('#orignr')->attr('value');
+		$spare['title']        = trim(pq('#theContent .page-header h1')->text());
+
+		// поиск производителя 
+		 $tmp = pq('#theContent>.row>div:eq(1) div');
+		foreach($tmp as $i){
+			pq('label',$i)->text();
+			if(strpos(trim(pq('label',$i)->text()), 'Производитель:')!==false ){
+				$spare['manufacturer'] = trim(str_replace( 'Производитель:', '', pq($i)->text()));
+			}
+		}
+		j($spare);
 		echo $doc;
 		$doc->unloadDocument();
 	});
@@ -180,11 +192,11 @@ function find_spares($links){
 	$mcurl->close();
 	
 }
-function find_links($_href, &$links, $page = 1){
+function find_links($config, &$links, $page = 1){
 	if(!file_exists('checker.dd')){
 		s('Вызвана остановка',1); exit;
 	}
-	
+	extract($config);
 	if($page>1){
 		$_href .= '?page=' . $page;
 	}
@@ -199,8 +211,8 @@ function find_links($_href, &$links, $page = 1){
   		// s('Пропускаем б/у запчасть',1);
 			// continue;
 		// }
-	
-		$links[] = SITE . pq('.boxheader a',$item)->attr('href');
+		$__href = SITE . pq('.boxheader a',$item)->attr('href');
+		$links[$__href] = ['category'=>$category,'marka'=>$marka, 'submodel'=>$submodel, 'href'=>$__href];
 		// $ar['_title'] = pq('a[itemprop=name]',$item)->text();
 		// $images = find_images(pq('.item-img img',$item)->attr('content'));
 		// $ar['_sku']   = trim(str_replace('Ориг. номер:','', pq('.item-line_info:eq(0)',$item)->text()));
@@ -216,7 +228,7 @@ function find_links($_href, &$links, $page = 1){
 		$end_page = (int)$pagi->attr('data-endpage');
 		if($cur_page < $end_page){
     	$doc->unloadDocument();
-			find_links($_href, $links, ++$cur_page);
+			find_links($config, $links, ++$cur_page);
 		}
 	}else{
 		$doc->unloadDocument();
