@@ -2,9 +2,10 @@
 set_time_limit(-1);
 clear('imgs');
 clear('spares_img');
+clear('check_dir');
 clear('csv');
 clear('');
-// file_put_contents('iddata',0);
+file_put_contents('iddata',240);
 // print_r(glob('imgs/*'));
 function clear($path){
 	// echo '<b>' . $path . '</b><br>';
@@ -16,7 +17,7 @@ function clear($path){
 		$item = $path . '/'. $item;
 		if(is_dir($item)){
 			// echo ' - is dir '.$item.'<br>';
-			clear("$item");
+			clear($item);
 			rmdir($item);
 		}else{
 			// echo 'удаляем файл ' . $item .  '<br>';

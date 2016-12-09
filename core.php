@@ -69,7 +69,7 @@ function parse($cat){
 	$mcurl->start();
 	
 	// проходимся по каждой собранной ссылке подмодели 
-	// собираем все картинки поделей
+	// собираем все картинки моделей
 	foreach($hrefs as $__img_src){
 		if(file_exists('imgs/' . $__img_src['img'][0] . 'auto.jpg')){
 			continue;
@@ -168,42 +168,47 @@ function find_spares($links){
 	}
 	$mcurl->success(function($instance) use ($links){
 		$item = $links[$instance->url];
-		$spare['marka'] = $item['marka'];
-		$spare['submodel'] = $item['submodel'];
-		$spare['category'] = $item['category'];
+		$spare['_marka'] = $item['marka'];
+		$spare['_submodel'] = $item['submodel'];
+		$spare['_category'] = $item['category'];
 		$doc = phpQuery::newDocument($instance->response);
-		$spare['oem']          = pq('#orignr')->attr('value');
-		$spare['title']        = trim(pq('#theContent .page-header h1')->text());
+		$spare['_sku']          = pq('#orignr')->attr('value');
+		$spare['_title']        = trim(pq('#theContent .page-header h1')->text());
 		
 		$is_BU = strpos($instance->url, 'part/new/') === false;
 		// поиск дубликата если БУ
-		if($is_BU){
-			if(exists($spare['oem'])){
-				s();
+		// if($is_BU){
+			if(exists('spare-' . $spare['_sku'])){
+				// s('уже существует, пропусаем ' . $spare['_title']);
 				return ;
 			}
-		}		
-		
+		// }		
+		save('spare-' . $spare['_sku']);
 		// поиск производителя 
+		$spare['_manufacturer'] = '';
 		$tmp = pq('#theContent>.row>div:eq(1) div');
 		foreach($tmp as $i){
 			pq('label',$i)->text();
 			if(strpos(trim(pq('label',$i)->text()), 'Производитель:')!==false ){
-				$spare['manufacturer'] = trim(str_replace( 'Производитель:', '', pq($i)->text()));
+				$spare['_manufacturer'] = trim(str_replace( 'Производитель:', '', pq($i)->text()));
 			}
 		}
 		
 		$images = pq('#block_img .thumbnail img');
-		$img = [];
+		$imgs = [];
 		foreach($images as $image){
-			$img[] = pq($image)->attr('src');
+			$imgs[] = pq($image)->attr('src');
 		}
-		j($img);
+		// j($imgs);
 		
 		
-		j($spare);
-		save_spare();
-		
+		// j($spare);
+		$id = null;
+		foreach($imgs as $img){
+			$spare["_id"] = $id;
+			$spare['_img'] = $img;
+			$id = save_spare($spare);
+		}
 		$doc->unloadDocument();
 	});
 	
@@ -237,7 +242,8 @@ function find_links($config, &$links, $page = 1){
 		// $ar['_sku']   = trim(str_replace('Ориг. номер:','', pq('.item-line_info:eq(0)',$item)->text()));
 		// $id = null;
 		// foreach($images as $image){
-			// $ar['_id'] = $id;
+			// $ar['_id'] = $
+			;
 			// $ar['_img'] = $image;
 		  // $id = save_spare($ar);
 		// }
@@ -265,7 +271,7 @@ function save(){
 function save_spare($ar){
 	extract(array_map('trim',$ar));
 	$csv_path = "csv/$_marka/";
-	$img_path = 'spares_img/';
+	$img_path = "spares_img/$_marka/" . translit($_submodel) . '/';
 	file_exists($img_path) || mkdir($img_path,null,1);
 	file_exists($csv_path) || mkdir($csv_path,null,1);
 	if($_img){
@@ -273,24 +279,26 @@ function save_spare($ar){
 		$img_bin = @file_get_contents($_img);
 		if($img_bin){
 			file_put_contents($img_path.$img_name,$img_bin);
+		  $img_name = "$_marka/" . translit($_submodel) . '/' . $img_name;
 		}else{
 			$img_name = '';
 		}
 	}else{
 		$img_name = '';
 	}
-	if(!file_exists($csv_path.$_model.'.csv')){
-	  $header = ['IE_XML_ID','IE_NAME','IE_CODE','IP_PROP9','IP_PROP13','IC_GROUP0','IC_GROUP1','IC_GROUP2'];
-		$fd = fopen($csv_path.$_model.'.csv', 'a');
+	$csv_name = $csv_path . translit($_submodel) . '.csv';
+	if(!file_exists($csv_name)){
+	  $header = ['IE_XML_ID','IE_NAME'/* ,'IE_CODE' */,'IP_PROP9','IP_PROP10','IP_PROP13','IC_GROUP0','IC_GROUP1','IC_GROUP2'];
+		$fd = fopen($csv_name, 'a');
 		fputcsv($fd,$header,';');
 	}else{
-	  $fd = fopen($csv_path.$_model.'.csv', 'a');
+	  $fd = fopen($csv_name, 'a');
 	}
-	$_code = translit($_title);
+	// $_code = translit($_title);
 	$id = $_id? : id();
 	$data = array_map(function($i){
 		return iconv('utf-8','cp1251',$i);
-	},[$id, $_title, $_code, $_sku, $img_name, 'Запчасти '. $_marka, 'Запчасти '. $_marka . ' ' . $_model,  $_submodel]);
+	},[$id, $_title, /* $_code,  */$_sku, $_manufacturer, $img_name, 'Запчасти '. $_marka, 'Запчасти '. $_marka . ' ' . $_submodel,  $_category . ' ' . $_marka . ' ' . $_submodel]);
 	fputcsv($fd,$data,';');
 	return $id;
 }
@@ -301,16 +309,20 @@ function id($id = null){
 	}
 	$id = 0;
 	$fp = fopen('iddata','a');
+	$id = fread($fp,1024);
 	if (flock($fp, LOCK_EX)) { // выполняем эксклюзивную блокировку
-		$id = fread($fp,1024);
+		s($id);
 		ftruncate($fp, 0); // очищаем файл
 		if( $id < 235 ) {
+			s($id .'<' . 235) ;
 			$id = 235;
 		}
 		$id++;
+		s($id);
 		fwrite($fp, $id);
 		fflush($fp);        // очищаем вывод перед отменой блокировки
 		flock($fp, LOCK_UN); // отпираем файл
+		fclose($fp);
 	} else {
 		die('не удалось открыть файлс ид'); 
 	}

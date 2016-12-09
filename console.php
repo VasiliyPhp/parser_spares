@@ -41,3 +41,4 @@ const SITE = 'http://euroauto.ru';
 		}
 		parse($cat);
 	}
+exec('pause');
