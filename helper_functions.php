@@ -68,3 +68,29 @@ function remove($name){
 	$name = 'tmp_'. $name;
 	file_exists($name) && unlink($name);
 }
+// set_error_handler('myErrorhandler');
+function myErrorHandler($errno, $errstr, $errfile, $errline)
+{
+    
+    switch ($errno) {
+    case E_USER_ERROR:
+        echo "<b>My ERROR</b> [$errno] $errstr<br />\n";
+        echo "  Фатальная ошибка в строке $errline файла $errfile";
+        
+	exit(1);break;
+ 
+    case E_USER_WARNING:
+        echo "<b>My WARNING</b> [$errno] $errstr<br />\n";
+        
+	exit(1);break;
+ 
+    case E_USER_NOTICE:
+        echo "<b>My NOTICE</b> [$errno] $errstr<br />\n";
+     
+	exit(1);   break;
+ 
+    default:
+        echo "Неизвестная ошибка: [$errno] $errstr<br />\n";
+        break;
+    }
+}

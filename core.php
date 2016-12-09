@@ -68,7 +68,6 @@ $not_necessary = [
 	'Chery Indis',
 	'Chery Kimo',
 	'Chery M11',
-	'',
 ];
 // поиск всех марок авто
 function get_main_categories(){
@@ -91,6 +90,7 @@ function get_main_categories(){
 
 // поиск подмоделей
 function parse($cat){
+	global $not_necessary;
 	//название марки
 	$_marka = $cat['title'];
 	// поиск моделей
@@ -126,12 +126,12 @@ function parse($cat){
 		$submodelsDoc->unloadDocument();
 	});
 	foreach($models as $model){
+		//название модели 
+		$_model = trim(pq($model)->find('.item-model-info')->text());
 		if(in_array("$_marka $_model", $not_necessary)){
 			s("$_marka $_model - не нужно парсить", 1);
 			continue;
 		}
-		//название модели 
-		$_model = trim(pq($model)->find('.item-model-info')->text());
 		$_model = str_replace('/','-',$_model);
 		$href  = trim(pq($model)->attr('href'));
 		if(!$href){
