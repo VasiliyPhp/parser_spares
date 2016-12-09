@@ -74,7 +74,7 @@ function parse($cat){
 		if(file_exists('imgs/' . $__img_src['img'][0] . 'auto.jpg')){
 			continue;
 		}
-		mkdir('imgs/' . $__img_src['img'][0],null,1);
+		file_exists('imgs/' . $__img_src['img'][0]) || mkdir('imgs/' . $__img_src['img'][0],null,1);
 		$mcurl->addDownload($__img_src['img'][1],'imgs/' . $__img_src['img'][0] . 'auto.jpg');
 	}
 	$mcurl->start();
@@ -127,6 +127,9 @@ function find_subcats($cats){
 		s('Вызвана остановка',1); exit;
 	}
 	foreach($cats as $cat){
+		if(!file_exists('checker.dd')){
+			s('Вызвана остановка',1); exit;
+		}
 		$_marka = $cat['marka'];
 		$_submodel = $cat['submodel'];
 		$_category = $cat['category'];
@@ -167,6 +170,9 @@ function find_spares($links){
 		$mcurl->addGet($link['href']);
 	}
 	$mcurl->success(function($instance) use ($links){
+		if(!file_exists('checker.dd')){
+			s('Вызвана остановка',1); exit;
+		}
 		$item = $links[$instance->url];
 		$spare['_marka'] = $item['marka'];
 		$spare['_submodel'] = $item['submodel'];
@@ -176,6 +182,11 @@ function find_spares($links){
 		$spare['_title']        = trim(pq('#theContent .page-header h1')->text());
 		
 		$is_BU = strpos($instance->url, 'part/new/') === false;
+		
+		if(!$spare['_sku']){
+			// s('нет оригинального номера '.$instance->url,1);
+			return;
+		}
 		// поиск дубликата если БУ
 		// if($is_BU){
 			if(exists('spare-' . $spare['_sku'])){
@@ -193,7 +204,9 @@ function find_spares($links){
 				$spare['_manufacturer'] = trim(str_replace( 'Производитель:', '', pq($i)->text()));
 			}
 		}
-		
+		if(!$spare['_manufacturer']){
+			// s('нет проиводителя '.$instance->url,1);
+		}
 		$images = pq('#block_img .thumbnail img');
 		$imgs = [];
 		foreach($images as $image){
@@ -307,25 +320,17 @@ function id($id = null){
 		file_put_contents('iddata', $id);
 		return $id;
 	}
-	$id = 0;
-	$fp = fopen('iddata','a');
-	$id = fread($fp,1024);
-	if (flock($fp, LOCK_EX)) { // выполняем эксклюзивную блокировку
-		s($id);
-		ftruncate($fp, 0); // очищаем файл
-		if( $id < 235 ) {
-			s($id .'<' . 235) ;
-			$id = 235;
-		}
-		$id++;
-		s($id);
-		fwrite($fp, $id);
-		fflush($fp);        // очищаем вывод перед отменой блокировки
-		flock($fp, LOCK_UN); // отпираем файл
-		fclose($fp);
-	} else {
-		die('не удалось открыть файлс ид'); 
+
+	$id = (int)file_get_contents('iddata');
+	
+	s($id);
+	if( $id < 235 ) {
+		s($id .'<' . 235) ;
+		$id = 235;
 	}
+	$id++;
+	s($id);
+	file_put_contents('iddata',$id);
 	return $id;
 }
 function translit($s) {
