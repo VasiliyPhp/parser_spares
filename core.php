@@ -1,5 +1,75 @@
 <?php
 
+$allCats = [
+	'Audi',
+	'Chery',
+	'Citroen',
+	'Geely',
+	'Hyundai',
+	'BMW',
+	'Chevrolet',
+	'Daewoo',
+	'Ford',
+	'Honda',
+	'Kia',
+	'Lifan',
+	'Mazda',
+	'Mitsubishi',
+	'Nissan',
+	'Opel',
+	'Peugeot',
+	'Renault',
+	'Skoda',
+	'Toyota',
+	'VW',
+	'Fiat',
+	'Infiniti',
+	'Volvo',
+];
+$not_necessary = [
+	'Daewoo Tico',
+	'Daewoo Rezzo',
+	'Citroen AX',
+	'Citroen BX',
+	'Citroen C15',
+	'Citroen C25',
+	'Citroen C35',
+	'Citroen C8',
+	'Citroen DS4',
+	'Citroen Evasion',
+	'Citroen DS3',
+	'Citroen C6',
+	'Citroen DS5',
+	'Audi 80/90',
+	'Audi 50',
+	'Audi V8',
+	'Audi R8',
+	'Audi TT',
+	'Chevrolet Blazer',
+	'Chevrolet Caprice',
+	'Chevrolet Camaro',
+	'Chevrolet Lumina',
+	'Chevrolet Metro',
+	'Chevrolet Rezzo',
+	'Chevrolet Evanda',
+	'Chevrolet Malibu',
+	'Chevrolet Silverado',
+	'Chevrolet Tahoe',
+	'Chevrolet Tracker',
+	'BMW Z3',
+	'BMW Z4',
+	'BMW 2-серия F45/F46 Active Tourer',
+	'BMW 4-Series',
+	'BMW 6-Series',
+	'BMW 8-Series',
+	'BMW GT',
+	'Chery Boo',
+	'Chery CrossEastar',
+	'Chery Indis',
+	'Chery Kimo',
+	'Chery M11',
+	'',
+];
 // поиск всех марок авто
 function get_main_categories(){
 	$cats = get('cats');
@@ -56,7 +126,10 @@ function parse($cat){
 		$submodelsDoc->unloadDocument();
 	});
 	foreach($models as $model){
-		
+		if(in_array("$_marka $_model", $not_necessary)){
+			s("$_marka $_model - не нужно парсить", 1);
+			continue;
+		}
 		//название модели 
 		$_model = trim(pq($model)->find('.item-model-info')->text());
 		$_model = str_replace('/','-',$_model);

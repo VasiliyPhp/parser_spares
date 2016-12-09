@@ -5,32 +5,7 @@
 	</head>
 	<body>
 <?php
-$allCats = [
-	'Audi',
-	'Chery',
-	'Citroen',
-	'Geely',
-	'Hyundai',
-	'BMW',
-	'Chevrolet',
-	'Daewoo',
-	'Ford',
-	'Honda',
-	'Kia',
-	'Lifan',
-	'Mazda',
-	'Mitsubishi',
-	'Nissan',
-	'Opel',
-	'Peugeot',
-	'Renault',
-	'Skoda',
-	'Toyota',
-	'VW',
-	'Fiat',
-	'Infiniti',
-	'Volvo',
-];
+
 const SITE = 'http://euroauto.ru';
 if(isset($_POST['cats'])){
 	require 'vendor/autoload.php';

@@ -1,31 +1,6 @@
 <?php
 exec('chcp 65001');
-$allCats = [
-	'Audi',
-	// 'Chery',
-	// 'Citroen',
-	// 'Geely',
-	// 'Hyundai',
-	// 'BMW',
-	// 'Chevrolet',
-	// 'Daewoo',
-	// 'Ford',
-	// 'Honda',
-	// 'Kia',
-	// 'Lifan',
-	// 'Mazda',
-	// 'Mitsubishi',
-	// 'Nissan',
-	// 'Opel',
-	// 'Peugeot',
-	// 'Renault',
-	// 'Skoda',
-	// 'Toyota',
-	// 'VW',
-	// 'Fiat',
-	// 'Infiniti',
-	// 'Volvo',
-];
+
 const SITE = 'http://euroauto.ru';
 
 	require 'vendor/autoload.php';
