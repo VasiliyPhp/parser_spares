@@ -254,13 +254,8 @@ function find_spares($links){
 		$instance->response = null;
 		$spare['_sku']          = pq('#orignr')->attr('value');
 		$spare['_title']        = trim(pq('#theContent .page-header h1')->text());
-		s('не удаленный дескриптор '. memory_get_usage());
 		curl_close($instance->curl);
-		// j($instance->curl);
 		curl_multi_remove_handle($mcurl->multiCurl, $instance->curl);
-		s(' удаленный дескриптор '. memory_get_usage());
-		phpQuery::unloadDocuments();
-		return ;
 		// die;
 		// s('середмна       < ' . memory_get_peak_usage());
 		// phpQuery::unloadDocuments();
@@ -302,7 +297,7 @@ function find_spares($links){
 		}
 		// j($imgs);
 		
-		
+		$spare['count_images'] = count($imgs);
 		// j($spare);
 		$id = null;
 		foreach($imgs as $img){
@@ -379,6 +374,9 @@ function save_spare($ar){
 		}
 	}else{
 		$img_name = '';
+	}
+	if(!$img_name && $count_images > 0){
+		return;
 	}
 	$csv_name = $csv_path . translit($_submodel) . '.csv';
 	if(!file_exists($csv_name)){
