@@ -1,7 +1,6 @@
 <!doctype html>
 <html>
 	<head>
-	<meta charset=windows-1251 >
 		<title>Парсер запчастей</title>
 	</head>
 	<body>
