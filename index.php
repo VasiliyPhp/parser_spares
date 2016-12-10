@@ -1,6 +1,7 @@
 <!doctype html>
 <html>
 	<head>
+	<meta charset=cp1251 >
 		<title>Парсер запчастей</title>
 	</head>
 	<body>
