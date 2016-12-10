@@ -89,7 +89,8 @@ if(isset($_POST['cats'])){
 			s($cat['title'] . ' - нет в списке', 1);
 			continue;
 		}
-		parse($cat);
+		$catsList = parse($cat);
+		find_subcats($catsList);
 	}
 }else{
 	echo "<form method=post target='_blank' >";

@@ -71,26 +71,28 @@ function remove($name){
 // set_error_handler('myErrorhandler');
 function myErrorHandler($errno, $errstr, $errfile, $errline)
 {
-    
-    switch ($errno) {
-    case E_USER_ERROR:
-        echo "<b>My ERROR</b> [$errno] $errstr<br />\n";
-        echo "  Фатальная ошибка в строке $errline файла $errfile";
-        
-	exit(1);break;
+    debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS,10);
+	return false;
+    // switch ($errno) {
+    // case E_USER_ERROR:
+        // echo "<b>My ERROR</b> [$errno] $errstr<br />\n";
+        // echo "  Фатальная ошибка в строке $errline файла $errfile";
+    // debug_print_backtrace();    
+	// exit(1);break;
  
-    case E_USER_WARNING:
-        echo "<b>My WARNING</b> [$errno] $errstr<br />\n";
-        
-	exit(1);break;
+    // case E_USER_WARNING:
+        // echo "<b>My WARNING</b> [$errno] $errstr<br />\n";
+     // debug_print_backtrace();   
+	// exit(1);break;
  
-    case E_USER_NOTICE:
-        echo "<b>My NOTICE</b> [$errno] $errstr<br />\n";
-     
-	exit(1);   break;
+    // case E_USER_NOTICE:
+        // echo "<b>My NOTICE</b> [$errno] $errstr<br />\n";
+   // debug_print_backtrace();  
+   // break;
  
-    default:
-        echo "Неизвестная ошибка: [$errno] $errstr<br />\n";
-        break;
-    }
+    // default:
+        // echo "Неизвестная ошибка: [$errno] $errstr<br />\n";
+        // break;
+    // }
+	
 }
