@@ -256,10 +256,11 @@ function find_spares($links){
 		$spare['_title']        = trim(pq('#theContent .page-header h1')->text());
 		s('не удаленный дескриптор '. memory_get_usage());
 		curl_close($instance->curl);
-		unset($instance->curl);
 		// j($instance->curl);
 		curl_multi_remove_handle($mcurl->multiCurl, $instance->curl);
 		s(' удаленный дескриптор '. memory_get_usage());
+		phpQuery::unloadDocuments();
+		return ;
 		// die;
 		// s('середмна       < ' . memory_get_peak_usage());
 		// phpQuery::unloadDocuments();
