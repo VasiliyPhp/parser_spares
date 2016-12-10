@@ -366,8 +366,8 @@ function save_spare($ar){
 	extract(array_map('trim',$ar));
 	$csv_path = "csv/$_marka/";
 	$img_path = "spares_img/$_marka/" . translit($_submodel) . '/';
-	file_exists($img_path) || mkdir($img_path,777,1);
-	file_exists($csv_path) || mkdir($csv_path,777,1);
+	file_exists($img_path) || mkdir($img_path,'0777',1);
+	file_exists($csv_path) || mkdir($csv_path,'0777',1);
 	if($_img){
 		$img_name = md5($_img) . '.jpg';
 		$img_bin = @file_get_contents($_img);
@@ -428,7 +428,7 @@ function translit($s) {
 }
 function save_img($href, $img){
 	$path = str_replace('/auto/cars/','',$href);
-	file_exists($path) || mkdir($path, 777, 1);
+	file_exists($path) || mkdir($path, '0777', 1);
 	file_exists($path . 'auto.jpg') || file_put_contents($path . 'auto.jpg', file_get_contents($img));
 }
 function find_images($url){
