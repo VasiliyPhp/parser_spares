@@ -219,7 +219,6 @@ function find_subcats($cats){
 		}
 		$doc->unloadDocument();
 		unset($doc, $list, $subcats);
-		return $subcats_href;
 		foreach($subcats_hrefs as $subcats_href){
 			$links = [];
 			
@@ -243,7 +242,7 @@ function find_spares($links){
 	foreach(array_column($links,'href') as $link){
 		$mcurl->addGet($link);
 	}
-	$mcurl->success(function($instance) use ($links){
+	$mcurl->success(function($instance) use ($links, $mcurl){
 		// s('<hr>--< ' . memory_get_peak_usage());
 		if(!file_exists('checker.dd')){
 			s('Вызвана остановка',1); exit;
@@ -256,7 +255,13 @@ function find_spares($links){
 		$instance->response = null;
 		$spare['_sku']          = pq('#orignr')->attr('value');
 		$spare['_title']        = trim(pq('#theContent .page-header h1')->text());
-		
+		s('не удаленный дескриптор '. memory_get_usage());
+		curl_close($instance->curl);
+		unset($instance->curl);
+		// j($instance->curl);
+		curl_multi_remove_handle($mcurl->multiCurl, $instance->curl);
+		s(' удаленный дескриптор '. memory_get_usage());
+		// die;
 		// s('середмна       < ' . memory_get_peak_usage());
 		// phpQuery::unloadDocuments();
 		// $instance = null;
