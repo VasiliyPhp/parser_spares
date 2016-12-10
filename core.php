@@ -1,6 +1,4 @@
-<?php
-
-$allCats = [
+<?php$allCats = [
 	'Audi',
 	'Chery',
 	'Citroen',
