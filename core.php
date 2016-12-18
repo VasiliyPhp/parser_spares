@@ -1,9 +1,9 @@
 <?php
 $allCats = [
 	'Audi',
-	'Chery',
+	//'Chery',
 	'Citroen',
-	'Geely',
+	//'Geely',
 	'Hyundai',
 	'BMW',
 	'Chevrolet',
@@ -22,8 +22,8 @@ $allCats = [
 	'Toyota',
 	'VW',
 	'Fiat',
-	'Infiniti',
-	'Volvo',
+	//'Infiniti',
+	//'Volvo',
 ];
 $not_necessary = [
 	'Daewoo Tico',
@@ -89,7 +89,7 @@ function get_main_categories(){
 
 // поиск подмоделей
 function parse($cat){
-	global $not_necessary;
+	global $not_necessary, $necessary;
 	//название марки
 	$_marka = $cat['title'];
 	// поиск моделей
@@ -127,7 +127,7 @@ function parse($cat){
 	foreach($models as $model){
 		//название модели 
 		$_model = trim(pq($model)->find('.item-model-info')->text());
-		if(in_array("$_marka $_model", $not_necessary)){
+		if(!in_array("$_marka $_model", $necessary)){
 			s("$_marka $_model - не нужно парсить", 1);
 			continue;
 		}
@@ -193,7 +193,14 @@ function find_subcats($cats){
 	if(!file_exists('checker.dd')){
 		s('Вызвана остановка',1); exit;
 	}
+	$c_i = 0;
 	foreach($cats as $cat){
+		$c_i++;
+		if(exists($cat['href'], 'cat')){
+			s('повтор ' . $cat['href']);
+			continue;
+		}
+		s("Поиск подкатегории в " . implode(' '  , $cat));
 		if(!file_exists('checker.dd')){
 			s('Вызвана остановка',1); exit;
 		}
@@ -218,16 +225,21 @@ function find_subcats($cats){
 		}
 		$doc->unloadDocument();
 		unset($doc, $list, $subcats);
+		$i = 0;
+		$c = count($subcats_hrefs);
 		foreach($subcats_hrefs as $subcats_href){
+			if(exists($subcats_href['_href'], 'sub_cat/' . $_submodel)){
+				s('пропускаем ' . $subcats_href['_href']);
+				continue;
+			}
 			$links = [];
-			
-		s('<hr>--< перед поиском ссылок' . memory_get_usage());
 			$links = find_links($subcats_href);
-		s('___перед поиском запчастей ' . memory_get_usage());
 			find_spares($links);
-			// j(get_defined_vars());
-		s('после поиска запчастей--< ' . memory_get_usage());
+			$i++;
+			save($subcats_href['_href'], 'sub_cat/' . $_submodel);
+			s( sprintf( '%s%%. Категория %s из %s', number_format( $i/$c*100 , 2 ), $c_i, count($cats) ) );
 		}
+		save($cat['href'], 'cat');
 	}
 	return ;
 	
@@ -242,6 +254,10 @@ function find_spares($links){
 		$mcurl->addGet($link);
 	}
 	$mcurl->success(function($instance) use ($links, $mcurl){
+		
+		// static $count;
+		// $count++;
+		// echo $count . "<br>\n";
 		// s('<hr>--< ' . memory_get_peak_usage());
 		if(!file_exists('checker.dd')){
 			s('Вызвана остановка',1); exit;
@@ -277,7 +293,7 @@ function find_spares($links){
 				return ;
 			}
 		}		
-		save('spare-' . $spare['_sku']);
+		// save('spare-' . $spare['_sku']);
 		// поиск производителя 
 		$spare['_manufacturer'] = '';
 		$tmp = pq('#theContent>.row>div:eq(1) div');
@@ -310,7 +326,8 @@ function find_spares($links){
 	}); 
 	
 	$mcurl->start();
-	
+	$mcurl->close();
+	unset($mcurl);
 	phpQuery::unloadDocuments();
 }
 function find_links($config, $page = 1){
@@ -349,13 +366,21 @@ function find_links($config, $page = 1){
 
 }
 function exists(){
-	$s = iconv('utf-8','cp1251',translit(implode('-',func_get_args())));
-	return file_exists("check_dir/$s");
+	$args = array_map(function($item){
+		return iconv('utf-8','cp1251',translit($item));
+	} , func_get_args());
+	$path = isset($args[1])? "check_dir/".$args[1]."/":"check_dir/";
+	$file =  $path.$args[0];
+	return file_exists($file);
 }
 function save(){
-	$s = iconv('utf-8','cp1251',translit(implode('-',func_get_args())));
-	file_exists('check_dir') || mkdir('check_dir');
-	touch("check_dir/$s");
+	$args = array_map(function($item){
+		return iconv('utf-8','cp1251',translit($item));
+	} , func_get_args());
+	$path = isset($args[1])? "check_dir/".$args[1]."/":"check_dir/";
+	$file =  $path.$args[0] ;
+	file_exists($path) || mkdir($path, '0777', 1);
+	touch($file);
 }
 function save_spare($ar){
 	extract(array_map('trim',$ar));
@@ -392,6 +417,7 @@ function save_spare($ar){
 		return iconv('utf-8','cp1251',$i);
 	},[$id, $_title, /* $_code,  */$_sku, $_manufacturer, $img_name, 'Запчасти '. $_marka, 'Запчасти '. $_marka . ' ' . $_submodel,  $_category . ' ' . $_marka . ' ' . $_submodel]);
 	fputcsv($fd,$data,';');
+	fclose($fd);
 	return $id;
 }
 function id($id = null){
@@ -400,10 +426,18 @@ function id($id = null){
 		return $id;
 	}
 
-	$id = (int)file_get_contents('iddata');
+	$id = file_get_contents('iddata');
 	
-	// s($id);
+	if(!$id){
+		sleep(2);
+		$id = file_get_contents('iddata');
+	}
+	
+	$id = (int)$id;
+	
 	if( $id < 235 ) {
+		s('Не удалось прочитать id');
+		exit();
 		s($id .'<' . 235) ;
 		$id = 235;
 	}

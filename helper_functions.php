@@ -32,8 +32,8 @@ if(!function_exists('s')){
 		  $color='#944';break;
 		}
 		?>
-		<div style="margin-bottom:5px;padding:4px;color:<?=$color;?>;font-weight:bold">
-		  <?=$s;?>
+		<div style="margin:3px;color:<?=$color;?>;">
+		  <?=$s. ' ; memory usage: ' . number_format(memory_get_usage() / 1000000, 1, '.', ' ') . ' Mb';?>
 		</div>
 	<?php 
 	ob_flush();
@@ -71,7 +71,8 @@ function remove($name){
 // set_error_handler('myErrorhandler');
 function myErrorHandler($errno, $errstr, $errfile, $errline)
 {
-    debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS,10);
+	if(stripos($errstr,'array to')!==false)
+    debug_print_backtrace(null,5);
 	return false;
     // switch ($errno) {
     // case E_USER_ERROR:

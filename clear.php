@@ -4,8 +4,7 @@ clear('imgs');
 clear('spares_img');
 clear('check_dir');
 clear('csv');
-clear('');
-file_put_contents('iddata',240);
+// file_put_contents('iddata',240);
 // print_r(glob('imgs/*'));
 function clear($path){
 	// echo '<b>' . $path . '</b><br>';

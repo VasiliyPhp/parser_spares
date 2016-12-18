@@ -1,19 +1,23 @@
+<?php
+error_reporting(E_ALL);
+ini_set('display_errors', true);
+?>
+
 <!doctype html>
 <html>
 	<head>
-		<title>Парсер запчастей</title>
+		<title><?=isset($_POST['cats'][0]) && $_POST['cats'][0] ? $_POST['cats'][0]
+		. ' - поиск запчастей' : 'Парсер запчастей'?></title>
 	</head>
 	<body>
 <?php
 
-error_reporting(E_ALL);
-ini_set('display_errors', true);
 
 $allCats = [
-	'Audi',
-	'Chery',
-	'Citroen',
-	'Geely',
+	// 'Audi',
+	//'Chery',
+	// 'Citroen',
+	//'Geely',
 	'Hyundai',
 	'BMW',
 	'Chevrolet',
@@ -31,9 +35,9 @@ $allCats = [
 	'Skoda',
 	'Toyota',
 	'VW',
-	'Fiat',
-	'Infiniti',
-	'Volvo',
+	// 'Fiat',
+	//'Infiniti',
+	//'Volvo',
 ];
 $not_necessary = [
 	'Daewoo Tico',
@@ -78,11 +82,16 @@ $not_necessary = [
 	'Chery Kimo',
 	'Chery M11',
 ];
+require 'vendor/autoload.php';
+$necessary = array_filter(array_map('trim', file('needed_cars.txt', FILE_SKIP_EMPTY_LINES | FILE_IGNORE_NEW_LINES )));
+// j($necessary);
 const SITE = 'http://euroauto.ru';
 if(isset($_POST['cats'])){
-	require 'vendor/autoload.php';
 	set_time_limit(-1);
 	touch('checker.dd');
+	if(isset($_POST['id'])){
+		id($_POST['id']);
+	}
 	// remove('cats');
 	$needle = $_POST['cats'];
 	$cats = get_main_categories();
