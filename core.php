@@ -384,8 +384,8 @@ function save(){
 }
 function save_spare($ar){
 	extract(array_map('trim',$ar));
-	$csv_path = "csv/$_marka/";
-	$img_path = "spares_img/$_marka/" . translit($_submodel) . '/';
+	$csv_path = "csv/csv_$_marka/";
+	$img_path = "spares_img/zapchasti_$_marka/" . translit($_submodel) . '/';
 	file_exists($img_path) || mkdir($img_path,'0777',1);
 	file_exists($csv_path) || mkdir($csv_path,'0777',1);
 	if($_img){
