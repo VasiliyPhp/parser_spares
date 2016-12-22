@@ -147,11 +147,11 @@ function parse($cat){
 	// проходимся по каждой собранной ссылке подмодели 
 	// собираем все картинки моделей
 	foreach($hrefs as $__img_src){
-		if(file_exists('imgs/' . $__img_src['img'][0] . 'auto.jpg')){
+		if(file_exists('imgs/cars_' . $__img_src['img'][0] . 'auto.jpg')){
 			continue;
 		}
-		file_exists('imgs/' . $__img_src['img'][0]) || mkdir('imgs/' . $__img_src['img'][0],777,1);
-		$mcurl->addDownload($__img_src['img'][1],'imgs/' . $__img_src['img'][0] . 'auto.jpg');
+		file_exists('imgs/cars_' . $__img_src['img'][0]) || mkdir('imgs/cars_' . $__img_src['img'][0],777,1);
+		$mcurl->addDownload($__img_src['img'][1],'imgs/cars_' . $__img_src['img'][0] . 'auto.jpg');
 	}
 	$mcurl->start();
 
