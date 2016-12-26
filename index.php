@@ -1,4 +1,5 @@
 <?php
+ignore_user_abort(true);
 error_reporting(E_ALL);
 ini_set('display_errors', true);
 ?>
