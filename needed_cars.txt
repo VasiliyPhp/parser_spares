@@ -231,20 +231,20 @@ Lexus NX
 Lexus RC
 Lexus RX
 
-Mercedes Benz класса A
-Mercedes Benz класса B
-Mercedes Benz класса C
-Mercedes Benz класса CL
-Mercedes Benz класса CLS
-Mercedes Benz класса E
-Mercedes Benz класса G
-Mercedes Benz класса GL
-Mercedes Benz класса GLA
-Mercedes Benz класса GLK
-Mercedes Benz класса M
-Mercedes Benz класса S
-Mercedes Benz класса Sprinter
-Mercedes Benz класса V
+Mercedes Benz A
+Mercedes Benz B
+Mercedes Benz C
+Mercedes Benz CL
+Mercedes Benz CLS
+Mercedes Benz E
+Mercedes Benz G
+Mercedes Benz GL
+Mercedes Benz GLA
+Mercedes Benz GLK
+Mercedes Benz M
+Mercedes Benz S
+Mercedes Benz Sprinter
+Mercedes Benz V
 
 Mitsubishi ASX
 Mitsubishi Carisma
