@@ -120,18 +120,18 @@ Fiat Punto
 Geely EMGRAND
 Geely MK
 
-Volkswagen Caddy
-Volkswagen Crafter
-Volkswagen Golf
-Volkswagen Jetta
-Volkswagen Lupo
-Volkswagen New Beetle
-Volkswagen Passat
-Volkswagen Polo
-Volkswagen Tiguan
-Volkswagen Touareg
-Volkswagen Touran
-Volkswagen Transporter
+VW Caddy
+VW Crafter
+VW Golf
+VW Jetta
+VW Lupo
+VW New Beetle
+VW Passat
+VW Polo
+VW Tiguan
+VW Touareg
+VW Touran
+VW Transporter
 
 
 Honda Accord
