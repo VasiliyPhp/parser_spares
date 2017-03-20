@@ -368,7 +368,7 @@
 		$id = $_id? : id();
 		$data = array_map(function($i){
 			return iconv('utf-8','cp1251',$i);
-		},[$id, $_title, /* $_code,  */$_sku, $_manufacturer, $img_name, $_comment,/*  'Запчасти '.  */$_marka, str_replace('Запчасти для ', '', $_model), $_marka . ' ' . $_submodel,  $_category . ' ' . $_marka . ' ' . $_submodel,  $_subcategory . ' ' . $_marka . ' ' . $_submodel]);
+		},[$id, $_title, /* $_code,  */$_sku, $_manufacturer, '/upload/' . $img_name, $_comment,/*  'Запчасти '.  */$_marka, str_replace('Запчасти для ', '', $_model), $_marka . ' ' . $_submodel,  $_category . ' ' . $_marka . ' ' . $_submodel,  $_subcategory . ' ' . $_marka . ' ' . $_submodel]);
 		fputcsv($fd,$data,';');
 		fclose($fd);
 		return $id;
