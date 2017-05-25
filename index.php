@@ -77,6 +77,6 @@
 				echo '<input type=submit value=start />';
 				echo '</form>';
 				echo '<a href="stop.php" >stop</a></br>';
-				echo '<a onclick="return confirm(\'Are you shure\');" href="clear.php" >clear</a>';
+				// echo '<a onclick="return confirm(\'Are you shure\');" href="clear.php" >clear</a>';
 			}
 				

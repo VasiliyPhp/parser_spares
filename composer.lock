@@ -4,7 +4,6 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "e2931d4338ce69cdf20f4bfeb2e0f44e",
     "content-hash": "b9830ed7ae706bfcf409cc327e2c5e21",
     "packages": [
         {
@@ -58,16 +57,16 @@
         },
         {
             "name": "php-curl-class/php-curl-class",
-            "version": "7.1.0",
+            "version": "7.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-curl-class/php-curl-class.git",
-                "reference": "07dee3e18156ce9543fb86c4d327bbccc5f197c1"
+                "reference": "75edfe2ab1d70a741c9eb7a05028412180d50c1d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-curl-class/php-curl-class/zipball/07dee3e18156ce9543fb86c4d327bbccc5f197c1",
-                "reference": "07dee3e18156ce9543fb86c4d327bbccc5f197c1",
+                "url": "https://api.github.com/repos/php-curl-class/php-curl-class/zipball/75edfe2ab1d70a741c9eb7a05028412180d50c1d",
+                "reference": "75edfe2ab1d70a741c9eb7a05028412180d50c1d",
                 "shasum": ""
             },
             "require": {
@@ -93,7 +92,7 @@
                     "name": "Zach Borboa"
                 }
             ],
-            "description": "PHP Curl Class is an object-oriented wrapper of the PHP cURL extension.",
+            "description": "PHP Curl Class makes it easy to send HTTP requests and integrate with web APIs.",
             "homepage": "https://github.com/php-curl-class/php-curl-class",
             "keywords": [
                 "api",
@@ -111,7 +110,7 @@
                 "web service",
                 "xml"
             ],
-            "time": "2016-11-13 11:11:22"
+            "time": "2017-01-27T07:49:43+00:00"
         }
     ],
     "packages-dev": [],
