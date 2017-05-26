@@ -42,10 +42,11 @@
 		$mcurl->success(function($instance) use (&$hrefs, $_marka){
 			$doc = $instance->response;
 			$submodelsDoc = phpQuery::newDocument($doc)->find('.model-list a');
-			$_model = trim(pq('h1')->text());
+			$_model = trim(str_replace('Запчасти для ' . $_marka, '', trim(pq('h1')->text())));
 			
 			foreach($submodelsDoc as $subm){
-				$_submodel = str_replace('/','-',trim(pq($subm)->text()));
+				$_submodel = trim(pq($subm)->find('.model-tile__title')->text());
+				// $_submodel = str_replace('/','-',trim(pq($subm)->text()));
 				if(exists($_marka,$_submodel)){
 					s("Пропускаем $_marka $_submodel");
 					continue;
@@ -60,13 +61,14 @@
 				'submodel' => $_submodel,
 				'img' => [str_replace('/auto/cars/','',$subm_href), $img],
 				];
-				// s($subm_href);
+				// j($hrefs);
 			}
 			$submodelsDoc->unloadDocument();
 		});
+		// echo $models;die;
 		foreach($models as $model){
 			//название модели 
-			$_model = trim(pq($model)->find('.item-model-info')->text());
+			$_model = trim(pq($model)->find('.model-tile__title')->text());
 			if(!in_array("$_marka $_model", $necessary)){
 				s("$_marka $_model - не нужно парсить", 1);
 				continue;
@@ -116,14 +118,26 @@
 			$submodel = $hrefs[$instance->url]['submodel'];
 			$marka = $hrefs[$instance->url]['marka'];
 			$model = $hrefs[$instance->url]['model'];
-			$subcatsDoc = phpQuery::newDocument($doc)->find('.model-list a');
-			$list = pq('.parts_left a');
-			// echo $list;exit;
+			$subcatsDoc = phpQuery::newDocument($doc);
+			// echo $doc; die;
+			$list = pq('.parts_left .tree-block');
 			foreach($list as $item){
-				array_push($catsList, ['marka'=>$marka, 'model'=>$model, 'submodel'=>$submodel, 'category'=>pq($item)->text(), 'href' => SITE . pq($item)->attr('href')]);
+				$subcats = pq('ul li a', $item);
+				$category = trim(pq('.title__content',$item)->text());
+				foreach($subcats as $subcat){
+					array_push($catsList, [
+					'_marka'=>$marka, 
+					'_model'=>$model, 
+					'_submodel'=>$submodel, 
+					'_category'=>$category, 
+					'_subcategory'=>trim(pq($subcat)->text()),
+					'_href' => SITE . pq($subcat)->attr('href')
+					]);
+				}
+				// echo count($subcats);die;
 			}
 			$subcatsDoc->unloadDocument();
-			
+			// j($catsList);
 		});
 		
 		foreach($hrefs as $__subm_href){
@@ -138,23 +152,25 @@
 		$mcurl->close();
 		gc_collect_cycles();
 		unset($mcurl);
+		// j($catsList);
 		return $catsList;
 	}
 	//поиск подкатегории в катерии запчасти 
-	function find_subcats($cats){
+	function find_subcats($subcats_hrefs){
 		if(!file_exists('checker.dd')){
 			s('Вызвана остановка',1); exit;
 		}
 		$c_i = 0;
-		foreach($cats as $cat){
+		// extract($subcats_hrefs);
+		/*foreach($cats as $cat){
 			$c_i++;
 			if(exists($cat['href'], 'cat')){
-				s('повтор ' . $cat['href']);
-				continue;
+			s('повтор ' . $cat['href']);
+			continue;
 			}
 			s("Поиск подкатегории в " . implode(' '  , $cat));
 			if(!file_exists('checker.dd')){
-				s('Вызвана остановка',1); exit;
+			s('Вызвана остановка',1); exit;
 			}
 			$_marka = $cat['marka'];
 			$_model = $cat['model'];
@@ -167,45 +183,50 @@
 			unset($curl);
 			
 			if(!$doc){
-				continue;
+			continue;
 			}
 			$doc = phpQuery::newDocument($doc);
 			$list = pq('.parts_left .ulplusminus a');
 			$subcats_hrefs = [];
 			foreach($list as $subcats){
-				// $a_href = [];
-				// $cats[$i]['title'] = $_subcat = pq($cat)->text();
-				// $cats[$i]['href'] = $_href2 = pq($cat)->attr('href');
-				$subcats_hrefs[] = ['marka'=>$_marka,'model'=>$_model,'submodel'=>$_submodel,'category'=>$_category, 'subcategory'=> trim(pq($subcats)->text()), '_href'=>SITE . pq($subcats)->attr('href')];
-				// $ar['_href'] = SITE . $_href2;
-				// $ar['_subcat'] = $_subcat;
-				// find_spare_links($ar, &$a_href);
+			// $a_href = [];
+			// $cats[$i]['title'] = $_subcat = pq($cat)->text();
+			// $cats[$i]['href'] = $_href2 = pq($cat)->attr('href');
+			$subcats_hrefs[] = ['marka'=>$_marka,'model'=>$_model,'submodel'=>$_submodel,'category'=>$_category, 'subcategory'=> trim(pq($subcats)->text()), '_href'=>SITE . pq($subcats)->attr('href')];
+			// $ar['_href'] = SITE . $_href2;
+			// $ar['_subcat'] = $_subcat;
+			// find_spare_links($ar, &$a_href);
 			}
 			$doc->unloadDocument();
 			unset($doc, $list, $subcats);
 			$i = 0;
-			$c = count($subcats_hrefs);
-			foreach($subcats_hrefs as $subcats_href){
-				if(exists($subcats_href['_href'], 'sub_cat/' . $_submodel)){
-					s('пропускаем ' . $subcats_href['_href']);
-					continue;
-				}
-				$links = [];
-				$links = find_links($subcats_href);
-				find_spares($links);
-				$i++;
-				save($subcats_href['_href'], 'sub_cat/' . $_submodel);
-				s( sprintf( '%s%%. Категория %s из %s', number_format( $i/$c*100 , 2 ), $c_i, count($cats) ) );
+		$c = count($subcats_hrefs);*/
+		$c = count($subcats_hrefs);
+		$i = 0;
+		foreach($subcats_hrefs as $subcats_href){
+			$i++;
+			extract($subcats_href);
+			if(exists($subcats_href['_href'], 'sub_cat/' . $_submodel)){
+				s('пропускаем ' . $subcats_href['_href']);
+				continue;
 			}
-			save($cat['href'], 'cat');
+			$links = [];
+			$links = find_links($subcats_href);
+			find_spares($links);
+			$i++;
+			save($subcats_href['_href'], 'sub_cat/' . $_submodel);
+			s( sprintf( '%s%%', number_format( $i/$c*100 , 2 ) ) );
 		}
+		// j($links);
+		// save($cat['href'], 'cat');
+		// }
 		return ;
 		
 	}
 	function find_spares($links){
 		if(!file_exists('checker.dd')){
-				s('Вызвана остановка',1); exit;
-			}
+			s('Вызвана остановка',1); exit;
+		}
 		global $new_links;
 		$new_links = [];
 		$mcurl = new Curl\MultiCurl;
@@ -214,10 +235,10 @@
 		foreach(array_column($links,'href') as $link){
 			
 			// if(!exists($link, $links[$link]['marka'],$links[$link]['model'],$links[$link]['subcategory'])){
-				$mcurl->addGet($link);
+			$mcurl->addGet($link);
 			// } 
 			// else {
-				// s('Пропускаем запчасть ' . $link);
+			// s('Пропускаем запчасть ' . $link);
 			// }
 		}
 		$mcurl->error(function($instance) use (&$links, $mcurl){
@@ -228,7 +249,7 @@
 					++$links[$instance->url]['try'];
 					$new_links[$instance->url] = $links[$instance->url];
 				}
-			} else {
+				} else {
 				$links[$instance->url]['try'] = 0;
 				$new_links[$instance->url] = $links[$instance->url];
 			}
@@ -239,7 +260,8 @@
 			curl_close($instance->curl);
 			curl_multi_remove_handle($mcurl->multiCurl, $instance->curl);
 			// s('Отработали ' . $instance->url);
-			});
+			gc_collect_cycles();
+		});
 		$mcurl->success(function($instance) use ($links, $mcurl){
 			// static $count;
 			// $count++;
@@ -250,7 +272,7 @@
 			}
 			$item = $links[$instance->url];
 			$spare['_marka']    = $item['marka'];
-			$spare['_model'] 	= $item['model'];
+			$spare['_model'] 	= $item['model'] == "Accent/Verna/Solaris" ? "Accent" : $item['model'];
 			$spare['_submodel'] = $item['submodel'];
 			$spare['_category'] = $item['category'];
 			$spare['_subcategory'] = $item['subcategory'];
@@ -258,7 +280,7 @@
 			$doc = phpQuery::newDocument($instance->response);
 			$instance->response = null;
 			$spare['_sku']      = pq('#orignr')->attr('value');
-			$spare['_comment']  = trim(pq('[itemprop="description"]')->html());
+			$spare['_comment']  = html_entity_decode(trim(pq('[itemprop="description"]')->html()));
 			$is_BU = strpos($instance->url, 'part/new/') === false;
 			if(!$spare['_sku']){
 				s('нет оригинального номера '.$instance->url,1);
@@ -319,7 +341,7 @@
 			find_spares($new_links);
 		}
 		// else{
-			// s('нет не найденных',1);
+		// s('нет не найденных',1);
 		// }
 		gc_collect_cycles();
 	}
@@ -329,6 +351,7 @@
 		if(!file_exists('checker.dd')){
 			s('Вызвана остановка',1); exit;
 		};
+		// s('страница ' . $page);
 		extract($config);
 		$links = [];
 		if($page>1){
@@ -344,10 +367,11 @@
 			
 			$__href = SITE . pq('.info__header a',$item)->attr('href');
 			$title  = trim(pq('.info__header a',$item)->text());
-			$links[$__href] = ['category'=>$category,'subcategory'=>$subcategory,'marka'=>$marka, 'model'=>$model, 'submodel'=>$submodel, 'href'=>$__href, 'title'=>$title];
+			$links[$__href] = ['category'=>$_category,'subcategory'=>$_subcategory,'marka'=>$_marka, 'model'=>$_model, 'submodel'=>$_submodel, 'href'=>$__href, 'title'=>$title];
 			
 		}
 		if($pagi = pq('#pagination-block')){
+			// s('есть пагинации');
 			$cur_page = (int)$pagi->attr('data-currentpage');
 			$end_page = (int)$pagi->attr('data-endpage');
 			if($cur_page < $end_page){
@@ -357,6 +381,7 @@
 			}
 		}
 		else{
+			s('нет пагинации');
 			$doc->unloadDocument();
 		}
 		return $links;
@@ -410,11 +435,34 @@
 			$img_name = '';
 		}
 		// if(!$img_name && $count_images > 0 && !$is_BU){
-			// return;
+		// return;
 		// }
 		$csv_name = $csv_path . translit($_marka) . '.csv';
 		if(!file_exists($csv_name)){
-			$header = ['IE_XML_ID','IE_NAME'/* ,'IE_CODE' */,'IP_PROP9','IP_PROP10','IP_PROP13','IP_PROP39','IC_GROUP0','IC_GROUP1','IC_GROUP2','IC_GROUP3','IC_GROUP4'];
+			// $header = ['IE_XML_ID','IE_NAME'/* ,'IE_CODE' */,'IP_PROP9','IP_PROP10','IP_PROP13','IP_PROP39','IC_GROUP0','IC_GROUP1','IC_GROUP2','IC_GROUP3','IC_GROUP4'];
+			$header = [
+			// 'IE_XML_ID', // id
+			'IE_NAME', // название запчасти
+			'IE_CODE', // символьный код товара (трансдлит)
+			'IP_PROP2', // сюда копировать название элемента
+			'IP_PROP4', //сюда копировать название элемента
+			'IP_PROP9', // артикул
+			'IP_PROP10', // производитель
+			'IP_PROP13', // Путь к картинке
+			'IP_PROP39', // Коментарий 
+			'IP_PROP41', // оригинал ? 
+			'IP_PROP42', // Аналог? 
+			'IC_GROUP0', // марка
+			'IC_CODE0', // символьный код (марка)
+			'IC_GROUP1', // Модель
+			'IC_CODE1', //  символьный код (модель)
+			'IC_GROUP2', // подмодель
+			'IC_CODE2', // символьный код (подмодель) 
+			'IC_GROUP3', // категория запчасти
+			'IC_CODE3', // символьный код (категория запчасти)
+			'IC_GROUP4', // подкатегория
+			'IC_CODE4', //  символьный код (покатегория)
+			];
 			$fd = fopen($csv_name, 'a');
 			fputcsv($fd,$header,';');
 		}
@@ -422,12 +470,35 @@
 			$fd = fopen($csv_name, 'a');
 		}
 		// $_code = translit($_title);
-		$id = $_id? : id();
+		// $id = $_id? : id();
 		$data = array_map(function($i){
 			return iconv('utf-8','cp1251',$i);
-		},[$id, $_title, /* $_code,  */$_sku, $_manufacturer, ($img_name ? '/upload/' . $img_name : '' ), $_comment,/*  'Запчасти '.  */$_marka, str_replace('Запчасти для ', '', $_model), $_marka . ' ' . $_submodel,  $_category /* . ' ' . $_marka . ' ' . $_submodel */,  $_subcategory /* . ' ' . $_marka . ' ' . $_submodel */]);
+		},[
+		// $id, 
+		$_title,
+		translit($_title),
+		$_title,
+		$_title,
+		$_sku, 
+		$_manufacturer, 
+		($img_name ? '/upload/' . $img_name : '' ),
+		$_comment,
+		($is_BU ? 'Y' : 'N'),
+		($is_BU ? 'N' : 'Y'),
+		$_marka,
+		translit($_marka),
+		str_replace('Запчасти для ', '', $_model), 
+		translit(str_replace('Запчасти для ', '', $_model)),
+		$_marka . ' ' . $_submodel,
+		translit($_marka . ' ' . $_submodel),
+		$_category,  
+		translit($_category),  
+		$_subcategory,
+		translit($_subcategory),
+		]);
 		fputcsv($fd,$data,';');
 		fclose($fd);
+		return null;
 		return $id;
 	}
 	function id($id = null){
@@ -486,4 +557,4 @@
 		return [null];
 		// exit();
 		$s = preg_replace("/[^0-9a-z]/i", "_", $s); // очищаем строку от недопустимых символов
-	}
+	}																																		

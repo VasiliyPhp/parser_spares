@@ -187,6 +187,7 @@ Hyundai ix55
 Hyundai Matrix
 Hyundai Porter
 Hyundai Santa
+Hyundai Solaris
 Hyundai Sonata
 Hyundai Starex
 Hyundai Terracan
@@ -216,10 +217,10 @@ Mazda CX-5
 Mazda CX-7
 Mazda CX-9
 Mazda Demio
-Mazda 2
-Mazda 3
-Mazda 5
-Mazda 6
+Mazda Mazda 2
+Mazda Mazda 3
+Mazda Mazda 5
+Mazda Mazda 6
 
 Lexus CT
 Lexus ES
